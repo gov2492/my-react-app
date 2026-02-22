@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import type { InventoryItem, InvoiceType } from '../types/dashboard'
+import type { InventoryItem } from '../types/dashboard'
 import '../styles/inventory-enhanced.css'
 
 interface InventoryProps {
@@ -8,20 +8,8 @@ interface InventoryProps {
   error: string | null
   searchQuery: string
   formatMoney: (value: number) => string
-  formatInvoiceType: (type: InvoiceType) => string
   formatDateTime: (value: string) => string
   onAddClick: () => void
-}
-
-// Jewelry product images/icons mapping
-const jewelryImages: Record<string, string> = {
-  'GOLD_18K': '👑',
-  'GOLD_22K': '💍',
-  'GOLD_24K': '✨',
-  'SILVER': '🌙',
-  'PLATINUM': '💎',
-  'DIAMOND': '💠',
-  'OTHER': '🎁'
 }
 
 export function InventoryEnhanced({
@@ -29,369 +17,198 @@ export function InventoryEnhanced({
   loading,
   error,
   searchQuery,
-  formatMoney,
-  formatInvoiceType,
   formatDateTime,
   onAddClick
 }: InventoryProps) {
-  const [viewMode, setViewMode] = useState<'grid' | 'table' | 'gallery'>('gallery')
-  const [sortBy, setSortBy] = useState<'name' | 'qty' | 'price' | 'updated'>('updated')
-  const [filterType, setFilterType] = useState<string>('All')
-  const [hoveredCard, setHoveredCard] = useState<string | null>(null)
+  const [activeCategory, setActiveCategory] = useState<string>('All')
+  const [activeMetal, setActiveMetal] = useState<string>('All')
+  const [localSearch, setLocalSearch] = useState<string>('')
 
-  // Get unique types for filter
-  const types = useMemo(() => {
-    const unique = new Set(items.map(item => item.type))
-    return Array.from(unique)
+  // Get unique filters
+  const categories = useMemo(() => {
+    return ['All', ...Array.from(new Set(items.map(item => item.category)))]
   }, [items])
 
-  // Filter and sort items
+  const metals = useMemo(() => {
+    return ['All', ...Array.from(new Set(items.map(item => item.metalType)))]
+  }, [items])
+
+  // Filter items
   const filteredItems = useMemo(() => {
     let filtered = items
 
-    if (filterType !== 'All') {
-      filtered = filtered.filter(item => item.type === filterType)
+    if (activeCategory !== 'All') {
+      filtered = filtered.filter(item => item.category === activeCategory)
     }
 
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
+    if (activeMetal !== 'All') {
+      filtered = filtered.filter(item => item.metalType === activeMetal)
+    }
+
+    const searchStr = (localSearch || searchQuery).toLowerCase().trim()
+    if (searchStr) {
       filtered = filtered.filter(item =>
-        item.sku.toLowerCase().includes(query) ||
-        item.itemName.toLowerCase().includes(query)
+        item.itemCode.toLowerCase().includes(searchStr) ||
+        item.itemName.toLowerCase().includes(searchStr) ||
+        (item.description && item.description.toLowerCase().includes(searchStr))
       )
     }
 
-    return filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'name':
-          return a.itemName.localeCompare(b.itemName)
-        case 'qty':
-          return b.quantity - a.quantity
-        case 'price':
-          return b.unitPrice - a.unitPrice
-        case 'updated':
-        default:
-          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-      }
-    })
-  }, [items, searchQuery, filterType, sortBy])
-
-  // Calculate statistics
-  const stats = useMemo(() => {
-    return {
-      totalItems: items.length,
-      uniqueSKUs: new Set(items.map(i => i.sku)).size,
-      totalValue: items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0),
-      lowStock: items.filter(item => item.quantity <= 5).length,
-      byType: items.reduce((acc, item) => {
-        acc[item.type] = (acc[item.type] || 0) + 1
-        return acc
-      }, {} as Record<string, number>)
-    }
-  }, [items])
-
-  const getTypeColor = (type: string): string => {
-    const colors: Record<string, string> = {
-      'GOLD_18K': '#F4A460',
-      'GOLD_22K': '#FFD700',
-      'GOLD_24K': '#FFA500',
-      'SILVER': '#C0C0C0',
-      'PLATINUM': '#E5E4E2',
-      'DIAMOND': '#B9F3FF',
-      'OTHER': '#DEB887'
-    }
-    return colors[type] || '#9CA3AF'
-  }
-
-  const getStockStatus = (quantity: number): { label: string; className: string; icon: string } => {
-    if (quantity === 0) return { label: 'Out of Stock', className: 'stock-critical', icon: '❌' }
-    if (quantity <= 5) return { label: 'Low Stock', className: 'stock-low', icon: '⚠️' }
-    if (quantity <= 20) return { label: 'Medium', className: 'stock-medium', icon: '📦' }
-    return { label: 'In Stock', className: 'stock-high', icon: '✅' }
-  }
+    return filtered.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+  }, [items, searchQuery, localSearch, activeCategory, activeMetal])
 
   if (loading) {
-    return <div className="inventory-loading">
-      <div className="spinner"></div>
-      <p>Loading your precious collection...</p>
-    </div>
+    return (
+      <div className="inventory-loading-modern" style={{ display: 'flex', justifyContent: 'center', padding: '4rem', color: '#D4AF37' }}>
+        <div className="spinner-large"></div>
+        <p style={{ marginLeft: '1rem', fontSize: '1.2rem', fontWeight: 500 }}>Loading Inventory Database...</p>
+      </div>
+    )
   }
 
   if (error) {
-    return <div className="inventory-error">
-      <div className="error-icon">🚨</div>
-      <p>{error}</p>
-    </div>
+    return (
+      <div className="inventory-error-modern" style={{ background: '#FFF5F5', color: '#C53030', padding: '1.5rem', borderRadius: '12px', border: '1px solid #FEB2B2', margin: '2rem 0' }}>
+        <h3 style={{ margin: '0 0 0.5rem 0' }}>⚠️ Data Sync Error</h3>
+        <p style={{ margin: 0 }}>{error}</p>
+      </div>
+    )
   }
 
   return (
-    <div className="inventory-enhanced-container">
-      {/* Hero Header */}
-      <div className="inventory-hero">
-        <div className="hero-content">
-          <h1>✨ Jewelry Inventory</h1>
-          <p>Manage your precious collection with elegance</p>
+    <div className="inventory-premium-container" style={{ fontFamily: "'Inter', sans-serif", color: '#fff', background: '#0a0f1a', minHeight: '100%', borderRadius: '16px', padding: '2rem', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+
+      {/* Header & Actions */}
+      <div className="inventory-header-modern" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid rgba(212, 175, 55, 0.2)', paddingBottom: '1.5rem', marginBottom: '2rem' }}>
+        <div>
+          <h1 style={{ fontSize: '2.2rem', fontWeight: 700, margin: '0 0 0.5rem 0', color: '#FFF' }}>
+            Inventory <span style={{ color: '#D4AF37' }}>Catalogue</span>
+          </h1>
+          <p style={{ color: '#A0ABC0', margin: 0, fontSize: '1rem' }}>Manage your entire jewellery collection and perform billing lookups instantly.</p>
         </div>
-        <button className="add-item-btn-hero" onClick={onAddClick}>
+        <button
+          onClick={onAddClick}
+          className="add-modern-btn"
+          style={{
+            background: 'linear-gradient(135deg, #FFD700 0%, #D4AF37 100%)',
+            color: '#1a202c',
+            border: 'none',
+            padding: '0.8rem 1.5rem',
+            borderRadius: '12px',
+            fontWeight: 600,
+            fontSize: '1rem',
+            cursor: 'pointer',
+            boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)',
+            transition: 'all 0.3s ease'
+          }}
+        >
           + Add New Item
         </button>
       </div>
 
-      {/* Statistics Dashboard */}
-      <div className="stats-showcase">
-        <div className="stat-showcase-card">
-          <div className="stat-icon large">📊</div>
-          <div className="stat-showcase-content">
-            <div className="stat-number">{stats.totalItems}</div>
-            <div className="stat-label">Total Items</div>
-          </div>
-        </div>
-        <div className="stat-showcase-card">
-          <div className="stat-icon large">💰</div>
-          <div className="stat-showcase-content">
-            <div className="stat-number">{formatMoney(stats.totalValue).split('.')[0]}</div>
-            <div className="stat-label">Inventory Value</div>
-          </div>
-        </div>
-        <div className="stat-showcase-card">
-          <div className="stat-icon large">⭐</div>
-          <div className="stat-showcase-content">
-            <div className="stat-number">{stats.uniqueSKUs}</div>
-            <div className="stat-label">Unique Items</div>
-          </div>
-        </div>
-        <div className="stat-showcase-card warning">
-          <div className="stat-icon large">⚠️</div>
-          <div className="stat-showcase-content">
-            <div className="stat-number">{stats.lowStock}</div>
-            <div className="stat-label">Low Stock</div>
-          </div>
-        </div>
-      </div>
+      {/* Filters & Search */}
+      <div className="inventory-controls-modern" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem', background: 'rgba(255, 255, 255, 0.02)', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
 
-      {/* Type Distribution */}
-      <div className="type-distribution">
-        <h3>📈 Collection by Type</h3>
-        <div className="type-badges-grid">
-          {types.map(type => (
-            <div 
-              key={type} 
-              className={`type-dist-badge ${filterType === type ? 'active' : ''}`}
-              onClick={() => setFilterType(filterType === type ? 'All' : type)}
-              style={{ borderColor: getTypeColor(type) }}
-            >
-              <span className="type-emoji">{jewelryImages[type]}</span>
-              <span className="type-name">{formatInvoiceType(type as InvoiceType)}</span>
-              <span className="type-count">{stats.byType[type] || 0}</span>
-            </div>
-          ))}
+        <div style={{ flex: '1 1 300px' }}>
+          <label style={{ display: 'block', fontSize: '0.85rem', color: '#A0ABC0', marginBottom: '0.5rem' }}>Search Collection</label>
+          <input
+            type="text"
+            placeholder="Search by code or item name..."
+            value={localSearch || searchQuery}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            style={{ width: '100%', padding: '0.8rem 1.2rem', background: '#111827', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#FFF', fontSize: '0.95rem', outline: 'none' }}
+          />
+        </div>
+
+        <div style={{ flex: '1 1 200px' }}>
+          <label style={{ display: 'block', fontSize: '0.85rem', color: '#A0ABC0', marginBottom: '0.5rem' }}>Filter by Metal</label>
+          <select
+            value={activeMetal}
+            onChange={(e) => setActiveMetal(e.target.value)}
+            style={{ width: '100%', padding: '0.8rem 1.2rem', background: '#111827', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#FFF', fontSize: '0.95rem', outline: 'none', cursor: 'pointer' }}
+          >
+            {metals.map(metal => <option key={metal} value={metal}>{metal}</option>)}
+          </select>
+        </div>
+
+        <div style={{ flex: '1 1 200px' }}>
+          <label style={{ display: 'block', fontSize: '0.85rem', color: '#A0ABC0', marginBottom: '0.5rem' }}>Filter by Category</label>
+          <select
+            value={activeCategory}
+            onChange={(e) => setActiveCategory(e.target.value)}
+            style={{ width: '100%', padding: '0.8rem 1.2rem', background: '#111827', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#FFF', fontSize: '0.95rem', outline: 'none', cursor: 'pointer' }}
+          >
+            {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+          </select>
         </div>
       </div>
 
-      {/* Controls */}
-      <div className="inventory-controls-enhanced">
-        <div className="control-row">
-          <div className="sort-control">
-            <label>Sort:</label>
-            <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="sort-select">
-              <option value="updated">Recently Updated</option>
-              <option value="name">Item Name</option>
-              <option value="qty">Quantity</option>
-              <option value="price">Unit Price</option>
-            </select>
+      {/* Modern Card Grid */}
+      <div className="inventory-grid-premium" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
+        {filteredItems.length === 0 ? (
+          <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '4rem', color: '#718096' }}>
+            <span style={{ fontSize: '3rem', display: 'block', marginBottom: '1rem', opacity: 0.5 }}>📦</span>
+            <h3 style={{ fontSize: '1.2rem', margin: 0 }}>No items found</h3>
+            <p>Try adjusting your search or filters.</p>
           </div>
-
-          <div className="view-modes">
-            <button
-              className={`view-btn ${viewMode === 'gallery' ? 'active' : ''}`}
-              onClick={() => setViewMode('gallery')}
-              title="Gallery View"
-            >
-              🖼️ Gallery
-            </button>
-            <button
-              className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
-              onClick={() => setViewMode('grid')}
-              title="Grid View"
-            >
-              ⊞ Grid
-            </button>
-            <button
-              className={`view-btn ${viewMode === 'table' ? 'active' : ''}`}
-              onClick={() => setViewMode('table')}
-              title="Table View"
-            >
-              ≡ List
-            </button>
-          </div>
-        </div>
-        <div className="result-count">
-          Showing <strong>{filteredItems.length}</strong> of <strong>{items.length}</strong> items
-        </div>
-      </div>
-
-      {/* Gallery View */}
-      {viewMode === 'gallery' && (
-        <div className="inventory-gallery">
-          {filteredItems.length === 0 ? (
-            <div className="no-items-message">
-              <div className="no-items-icon">💍</div>
-              <p>No items match your search</p>
-            </div>
-          ) : (
-            filteredItems.map((item) => {
-              const stockStatus = getStockStatus(item.quantity)
-              return (
-                <div
-                  key={item.sku}
-                  className="gallery-card"
-                  onMouseEnter={() => setHoveredCard(item.sku)}
-                  onMouseLeave={() => setHoveredCard(null)}
-                >
-                  <div className="gallery-image-wrapper">
-                    <div 
-                      className="gallery-image"
-                      style={{ backgroundColor: getTypeColor(item.type) }}
-                    >
-                      <span className="product-emoji">{jewelryImages[item.type]}</span>
-                    </div>
-                    <div className="status-ribbon" style={{ background: getTypeColor(item.type) }}>
-                      {formatInvoiceType(item.type as InvoiceType)}
-                    </div>
-                  </div>
-
-                  <div className="gallery-content">
-                    <h3 className="item-name">{item.itemName}</h3>
-                    <div className="item-sku">SKU: {item.sku}</div>
-
-                    <div className="item-specs">
-                      <div className="spec-item">
-                        <span className="spec-icon">⚖️</span>
-                        <span className="spec-value">{item.weightGrams.toFixed(3)}g</span>
-                      </div>
-                      <div className="spec-item">
-                        <span className="spec-icon">📦</span>
-                        <span className="spec-value">{item.quantity} pcs</span>
-                      </div>
-                      <div className="spec-item">
-                        <span className="spec-icon">💵</span>
-                        <span className="spec-value">{formatMoney(item.unitPrice)}</span>
-                      </div>
-                    </div>
-
-                    <div className="item-total-value">
-                      Total: <strong>{formatMoney(item.quantity * item.unitPrice)}</strong>
-                    </div>
-
-                    <div className={`stock-status ${stockStatus.className}`}>
-                      <span className="status-icon">{stockStatus.icon}</span>
-                      {stockStatus.label}
-                    </div>
-
-                    {hoveredCard === item.sku && (
-                      <div className="card-actions">
-                        <button className="action-btn edit">✏️ Edit</button>
-                        <button className="action-btn delete">🗑️ Delete</button>
-                      </div>
-                    )}
-
-                    <div className="item-date">
-                      Updated: {formatDateTime(item.updatedAt)}
-                    </div>
-                  </div>
+        ) : (
+          filteredItems.map(item => (
+            <div key={item.itemCode} className="inventory-card-premium" style={{
+              background: 'linear-gradient(to bottom, #111827, #1f2937)',
+              borderRadius: '16px',
+              padding: '1.5rem',
+              border: '1px solid rgba(255,255,255,0.08)',
+              position: 'relative',
+              overflow: 'hidden',
+              transition: 'transform 0.3s ease, box-shadow 0.3s ease'
+            }}>
+              {item.metalType.toLowerCase() === 'gold' && (
+                <div style={{ position: 'absolute', top: 0, right: 0, background: 'rgba(212, 175, 55, 0.15)', color: '#D4AF37', padding: '0.4rem 1rem', borderBottomLeftRadius: '16px', fontSize: '0.8rem', fontWeight: 'bold', border: '1px solid rgba(212, 175, 55, 0.2)', borderTop: 'none', borderRight: 'none' }}>
+                  {item.purity} Gold
                 </div>
-              )
-            })
-          )}
-        </div>
-      )}
-
-      {/* Grid View */}
-      {viewMode === 'grid' && (
-        <div className="inventory-grid-enhanced">
-          {filteredItems.length === 0 ? (
-            <div className="no-items-message">
-              <div className="no-items-icon">💍</div>
-              <p>No items match your search</p>
-            </div>
-          ) : (
-            filteredItems.map((item) => {
-              const stockStatus = getStockStatus(item.quantity)
-              return (
-                <div key={item.sku} className="grid-card-enhanced">
-                  <div className="grid-card-header" style={{ backgroundColor: getTypeColor(item.type) }}>
-                    <span className="card-emoji">{jewelryImages[item.type]}</span>
-                    <span className="card-type">{formatInvoiceType(item.type as InvoiceType)}</span>
-                  </div>
-                  <div className="grid-card-body">
-                    <h4>{item.itemName}</h4>
-                    <p className="sku">{item.sku}</p>
-                    <div className="details">
-                      <div>Weight: {item.weightGrams.toFixed(3)}g</div>
-                      <div>Qty: <strong>{item.quantity}</strong></div>
-                      <div>Price: {formatMoney(item.unitPrice)}</div>
-                    </div>
-                    <div className={`status-badge ${stockStatus.className}`}>
-                      {stockStatus.label}
-                    </div>
-                  </div>
+              )}
+              {item.metalType.toLowerCase() === 'platinum' && (
+                <div style={{ position: 'absolute', top: 0, right: 0, background: 'rgba(229, 228, 226, 0.15)', color: '#E5E4E2', padding: '0.4rem 1rem', borderBottomLeftRadius: '16px', fontSize: '0.8rem', fontWeight: 'bold', border: '1px solid rgba(229, 228, 226, 0.2)', borderTop: 'none', borderRight: 'none' }}>
+                  Platinum
                 </div>
-              )
-            })
-          )}
-        </div>
-      )}
+              )}
+              {item.metalType.toLowerCase() === 'silver' && (
+                <div style={{ position: 'absolute', top: 0, right: 0, background: 'rgba(192, 192, 192, 0.15)', color: '#C0C0C0', padding: '0.4rem 1rem', borderBottomLeftRadius: '16px', fontSize: '0.8rem', fontWeight: 'bold', border: '1px solid rgba(192, 192, 192, 0.2)', borderTop: 'none', borderRight: 'none' }}>
+                  Silver
+                </div>
+              )}
 
-      {/* Table View */}
-      {viewMode === 'table' && (
-        <div className="inventory-table-enhanced">
-          {filteredItems.length === 0 ? (
-            <div className="no-items-message">
-              <div className="no-items-icon">💍</div>
-              <p>No items match your search</p>
+              <div style={{ marginBottom: '0.5rem', marginTop: '0.5rem' }}>
+                <span style={{ fontSize: '0.75rem', letterSpacing: '1px', color: '#A0ABC0', textTransform: 'uppercase' }}>{item.itemCode}</span>
+              </div>
+
+              <h3 style={{ fontSize: '1.25rem', color: '#FFF', margin: '0 0 1rem 0', fontWeight: 600, WebkitLineClamp: 2, overflow: 'hidden', display: '-webkit-box', WebkitBoxOrient: 'vertical' }}>
+                {item.itemName}
+              </h3>
+
+              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+                <span style={{ background: 'rgba(255,255,255,0.05)', color: '#CBD5E0', padding: '0.3rem 0.8rem', borderRadius: '8px', fontSize: '0.8rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  {item.category}
+                </span>
+                <span style={{ background: 'rgba(255,255,255,0.05)', color: '#CBD5E0', padding: '0.3rem 0.8rem', borderRadius: '8px', fontSize: '0.8rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  {item.metalType}
+                </span>
+              </div>
+
+              {item.description && (
+                <p style={{ margin: 0, paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)', color: '#A0ABC0', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                  {item.description}
+                </p>
+              )}
+
+              <p style={{ margin: '0.8rem 0 0', color: '#718096', fontSize: '0.75rem' }}>
+                Updated: {formatDateTime(item.updatedAt)}
+              </p>
             </div>
-          ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Type</th>
-                  <th>Item Name</th>
-                  <th>SKU</th>
-                  <th>Weight</th>
-                  <th>Qty</th>
-                  <th>Price</th>
-                  <th>Total</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredItems.map((item) => {
-                  const stockStatus = getStockStatus(item.quantity)
-                  return (
-                    <tr key={item.sku} className={stockStatus.className}>
-                      <td className="type-cell">
-                        <span className="type-emoji-small">{jewelryImages[item.type]}</span>
-                        {formatInvoiceType(item.type as InvoiceType)}
-                      </td>
-                      <td>{item.itemName}</td>
-                      <td className="sku-cell">{item.sku}</td>
-                      <td>{item.weightGrams.toFixed(3)}g</td>
-                      <td className="qty-cell">{item.quantity}</td>
-                      <td className="price-cell">{formatMoney(item.unitPrice)}</td>
-                      <td className="total-cell">{formatMoney(item.quantity * item.unitPrice)}</td>
-                      <td>
-                        <span className={`status-badge-table ${stockStatus.className}`}>
-                          {stockStatus.icon} {stockStatus.label}
-                        </span>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
+          ))
+        )}
+      </div>
+
     </div>
   )
 }

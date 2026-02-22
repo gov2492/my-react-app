@@ -3,8 +3,12 @@ package com.luxegem.dashboard.controller;
 import com.luxegem.dashboard.model.DashboardResponse;
 import com.luxegem.dashboard.model.CreateInvoiceRequest;
 import com.luxegem.dashboard.model.CreateInventoryRequest;
+import com.luxegem.dashboard.model.CreateNotificationRequest;
 import com.luxegem.dashboard.model.InvoiceResponse;
 import com.luxegem.dashboard.model.InventoryResponse;
+import com.luxegem.dashboard.model.MarkAllReadResponse;
+import com.luxegem.dashboard.model.NotificationResponse;
+import com.luxegem.dashboard.model.UnreadCountResponse;
 import com.luxegem.dashboard.service.DashboardAggregationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -18,6 +22,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -114,5 +120,38 @@ public class DashboardController {
     ) {
         logger.debug("Creating inventory with Authorization header");
         return dashboardAggregationService.createInventory(authorization, request);
+    }
+
+    @GetMapping("/notifications")
+    public List<NotificationResponse> listNotifications(
+            @RequestHeader("Authorization") String authorization,
+            @RequestParam(defaultValue = "50") int limit) {
+        return dashboardAggregationService.listNotifications(authorization, limit);
+    }
+
+    @GetMapping("/notifications/unread-count")
+    public UnreadCountResponse unreadCount(
+            @RequestHeader("Authorization") String authorization) {
+        return dashboardAggregationService.unreadCount(authorization);
+    }
+
+    @PatchMapping("/notifications/{id}/read")
+    public NotificationResponse markNotificationRead(
+            @RequestHeader("Authorization") String authorization,
+            @PathVariable Long id) {
+        return dashboardAggregationService.markNotificationRead(authorization, id);
+    }
+
+    @PatchMapping("/notifications/read-all")
+    public MarkAllReadResponse markAllNotificationsRead(
+            @RequestHeader("Authorization") String authorization) {
+        return dashboardAggregationService.markAllNotificationsRead(authorization);
+    }
+
+    @PostMapping("/notifications")
+    public NotificationResponse createNotification(
+            @RequestHeader("Authorization") String authorization,
+            @Valid @RequestBody CreateNotificationRequest request) {
+        return dashboardAggregationService.createNotification(authorization, request);
     }
 }

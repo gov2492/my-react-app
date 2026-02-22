@@ -4,8 +4,10 @@ import com.luxegem.invoice.entity.InvoiceEntity;
 import com.luxegem.invoice.model.CreateInvoiceRequest;
 
 import com.luxegem.invoice.model.InvoiceResponse;
+import com.luxegem.invoice.model.NotificationType;
 import com.luxegem.invoice.model.OverviewResponse;
 import com.luxegem.invoice.repository.InvoiceRepository;
+import com.luxegem.invoice.service.NotificationService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,9 +27,11 @@ import java.security.Principal;
 public class InvoiceController {
 
         private final InvoiceRepository invoiceRepository;
+        private final NotificationService notificationService;
 
-        public InvoiceController(InvoiceRepository invoiceRepository) {
+        public InvoiceController(InvoiceRepository invoiceRepository, NotificationService notificationService) {
                 this.invoiceRepository = invoiceRepository;
+                this.notificationService = notificationService;
         }
 
         @GetMapping("/overview")
@@ -99,6 +103,11 @@ public class InvoiceController {
                 String shopId = principal != null ? principal.getName() : "admin";
                 entity.setShopId(shopId);
                 invoiceRepository.save(entity);
+                notificationService.createSystemNotification(
+                                shopId,
+                                "Invoice created successfully",
+                                String.format("%s created for %s", invoiceId, request.customer()),
+                                NotificationType.SUCCESS);
                 return new InvoiceResponse(
                                 entity.getInvoiceId(),
                                 entity.getCustomer(),

@@ -3,7 +3,9 @@ package com.luxegem.invoice.controller;
 import com.luxegem.invoice.entity.InventoryEntity;
 import com.luxegem.invoice.model.CreateInventoryRequest;
 import com.luxegem.invoice.model.InventoryResponse;
+import com.luxegem.invoice.model.NotificationType;
 import com.luxegem.invoice.repository.InventoryRepository;
+import com.luxegem.invoice.service.NotificationService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,9 +25,11 @@ import java.security.Principal;
 public class InventoryController {
 
     private final InventoryRepository inventoryRepository;
+    private final NotificationService notificationService;
 
-    public InventoryController(InventoryRepository inventoryRepository) {
+    public InventoryController(InventoryRepository inventoryRepository, NotificationService notificationService) {
         this.inventoryRepository = inventoryRepository;
+        this.notificationService = notificationService;
     }
 
     @GetMapping
@@ -42,20 +46,30 @@ public class InventoryController {
     @ResponseStatus(HttpStatus.CREATED)
     public InventoryResponse createInventory(@Valid @RequestBody CreateInventoryRequest request, Principal principal) {
         String shopId = principal != null ? principal.getName() : "admin";
-        String sku = (request.sku() == null || request.sku().isBlank())
+        String itemCode = (request.itemCode() == null || request.itemCode().isBlank())
                 ? generateSku()
-                : request.sku().trim().toUpperCase();
+                : request.itemCode().trim().toUpperCase();
 
         InventoryEntity entity = new InventoryEntity(
-                sku,
+                itemCode,
                 request.itemName(),
-                request.type(),
-                BigDecimal.valueOf(request.weightGrams()),
-                request.quantity(),
-                BigDecimal.valueOf(request.unitPrice()),
-                request.lowStockThreshold());
+                request.category(),
+                request.metalType(),
+                request.purity(),
+                BigDecimal.valueOf(request.grossWeight()),
+                request.netWeight() != null ? BigDecimal.valueOf(request.netWeight()) : null,
+                request.makingCharge() != null ? BigDecimal.valueOf(request.makingCharge()) : null,
+                BigDecimal.valueOf(request.ratePerGram()),
+                request.stockQuantity(),
+                request.hsnCode(),
+                request.description());
         entity.setShopId(shopId);
         InventoryEntity saved = inventoryRepository.save(entity);
+        notificationService.createSystemNotification(
+                shopId,
+                "Inventory item added",
+                String.format("%s (%s) added to inventory", saved.getItemName(), saved.getItemCode()),
+                NotificationType.INFO);
 
         return toResponse(saved);
     }
@@ -69,13 +83,13 @@ public class InventoryController {
 
     private InventoryResponse toResponse(InventoryEntity entity) {
         return new InventoryResponse(
-                entity.getSku(),
+                entity.getItemCode(),
                 entity.getItemName(),
-                entity.getType(),
-                entity.getWeightGrams().doubleValue(),
-                entity.getQuantity(),
-                entity.getUnitPrice().doubleValue(),
-                entity.getLowStockThreshold(),
-                entity.getUpdatedAt().toString());
+                entity.getCategory(),
+                entity.getMetalType(),
+                entity.getPurity(),
+                entity.getDescription(),
+                entity.getUpdatedAt().toString(),
+                entity.getCreatedAt() != null ? entity.getCreatedAt().toString() : entity.getUpdatedAt().toString());
     }
 }

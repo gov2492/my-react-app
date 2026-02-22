@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import type { InventoryItem, InvoiceType } from '../types/dashboard'
+import type { InventoryItem } from '../types/dashboard'
 import '../styles/inventory.css'
 
 interface InventoryProps {
@@ -8,7 +8,6 @@ interface InventoryProps {
   error: string | null
   searchQuery: string
   formatMoney: (value: number) => string
-  formatInvoiceType: (type: InvoiceType) => string
   formatDateTime: (value: string) => string
   onAddClick: () => void
 }
@@ -19,7 +18,6 @@ export function InventorySection({
   error,
   searchQuery,
   formatMoney,
-  formatInvoiceType,
   formatDateTime,
   onAddClick
 }: InventoryProps) {
@@ -29,7 +27,7 @@ export function InventorySection({
 
   // Get unique types for filter
   const types = useMemo(() => {
-    const unique = new Set(items.map(item => item.type))
+    const unique = new Set(items.map(item => item.metalType))
     return Array.from(unique)
   }, [items])
 
@@ -38,13 +36,13 @@ export function InventorySection({
     let filtered = items
 
     if (filterType !== 'All') {
-      filtered = filtered.filter(item => item.type === filterType)
+      filtered = filtered.filter(item => item.metalType === filterType)
     }
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
       filtered = filtered.filter(item =>
-        item.sku.toLowerCase().includes(query) ||
+        item.itemCode.toLowerCase().includes(query) ||
         item.itemName.toLowerCase().includes(query)
       )
     }
@@ -54,9 +52,9 @@ export function InventorySection({
         case 'name':
           return a.itemName.localeCompare(b.itemName)
         case 'qty':
-          return b.quantity - a.quantity
+          return b.stockQuantity - a.stockQuantity
         case 'price':
-          return b.unitPrice - a.unitPrice
+          return b.ratePerGram - a.ratePerGram
         case 'updated':
         default:
           return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
@@ -68,9 +66,9 @@ export function InventorySection({
   const stats = useMemo(() => {
     return {
       totalItems: items.length,
-      uniqueSKUs: new Set(items.map(i => i.sku)).size,
-      totalValue: items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0),
-      lowStock: items.filter(item => item.quantity <= 5).length
+      uniqueSKUs: new Set(items.map(i => i.itemCode)).size,
+      totalValue: items.reduce((sum, item) => sum + (item.stockQuantity * item.ratePerGram), 0),
+      lowStock: items.filter(item => item.stockQuantity <= 5).length
     }
   }, [items])
 
@@ -170,7 +168,7 @@ export function InventorySection({
           <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="filter-select">
             <option value="All">All Types</option>
             {types.map(type => (
-              <option key={type} value={type}>{formatInvoiceType(type)}</option>
+              <option key={type} value={type}>{type}</option>
             ))}
           </select>
         </div>
@@ -218,12 +216,12 @@ export function InventorySection({
             </div>
           ) : (
             filteredItems.map((item) => {
-              const stockStatus = getStockStatus(item.quantity)
+              const stockStatus = getStockStatus(item.stockQuantity)
               return (
-                <div key={item.sku} className="inventory-card">
+                <div key={item.itemCode} className="inventory-card">
                   <div className="card-header">
-                    <div className="type-badge" style={{ backgroundColor: getTypeColor(item.type) }}>
-                      {formatInvoiceType(item.type as InvoiceType)}
+                    <div className="type-badge" style={{ backgroundColor: getTypeColor(item.metalType) }}>
+                      {item.metalType + " " + item.purity}
                     </div>
                     <div className={`stock-badge ${stockStatus.className}`}>
                       {stockStatus.label}
@@ -232,25 +230,25 @@ export function InventorySection({
 
                   <div className="card-body">
                     <div className="item-name">{item.itemName}</div>
-                    <div className="item-sku">SKU: {item.sku}</div>
+                    <div className="item-sku">SKU: {item.itemCode}</div>
 
                     <div className="item-details">
                       <div className="detail-row">
                         <span className="detail-label">Weight:</span>
-                        <span className="detail-value">{item.weightGrams.toFixed(3)}g</span>
+                        <span className="detail-value">{item.grossWeight.toFixed(3)}g</span>
                       </div>
                       <div className="detail-row">
                         <span className="detail-label">Quantity:</span>
-                        <span className="detail-value qty-value">{item.quantity}</span>
+                        <span className="detail-value qty-value">{item.stockQuantity}</span>
                       </div>
                       <div className="detail-row">
                         <span className="detail-label">Unit Price:</span>
-                        <span className="detail-value price-value">{formatMoney(item.unitPrice)}</span>
+                        <span className="detail-value price-value">{formatMoney(item.ratePerGram)}</span>
                       </div>
                     </div>
 
                     <div className="item-total">
-                      Total: <strong>{formatMoney(item.quantity * item.unitPrice)}</strong>
+                      Total: <strong>{formatMoney(item.stockQuantity * item.ratePerGram)}</strong>
                     </div>
 
                     <div className="item-updated">
@@ -294,23 +292,23 @@ export function InventorySection({
               </thead>
               <tbody>
                 {filteredItems.map((item) => {
-                  const stockStatus = getStockStatus(item.quantity)
-                  const totalValue = item.quantity * item.unitPrice
+                  const stockStatus = getStockStatus(item.stockQuantity)
+                  const totalValue = item.stockQuantity * item.ratePerGram
                   return (
-                    <tr key={item.sku} className={stockStatus.className}>
-                      <td className="sku-cell"><strong>{item.sku}</strong></td>
+                    <tr key={item.itemCode} className={stockStatus.className}>
+                      <td className="sku-cell"><strong>{item.itemCode}</strong></td>
                       <td>{item.itemName}</td>
                       <td>
                         <span
                           className="type-tag"
-                          style={{ backgroundColor: getTypeColor(item.type), color: '#000' }}
+                          style={{ backgroundColor: getTypeColor(item.metalType), color: '#000' }}
                         >
-                          {formatInvoiceType(item.type as InvoiceType)}
+                          {item.metalType + " " + item.purity}
                         </span>
                       </td>
-                      <td className="numeric">{item.weightGrams.toFixed(3)}</td>
-                      <td className="numeric qty-cell">{item.quantity}</td>
-                      <td className="numeric">{formatMoney(item.unitPrice)}</td>
+                      <td className="numeric">{item.grossWeight.toFixed(3)}</td>
+                      <td className="numeric qty-cell">{item.stockQuantity}</td>
+                      <td className="numeric">{formatMoney(item.ratePerGram)}</td>
                       <td className="numeric total-cell">
                         <strong>{formatMoney(totalValue)}</strong>
                       </td>

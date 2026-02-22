@@ -3,14 +3,19 @@ package com.luxegem.dashboard.service;
 import com.luxegem.dashboard.model.DashboardResponse;
 import com.luxegem.dashboard.model.CreateInvoiceRequest;
 import com.luxegem.dashboard.model.CreateInventoryRequest;
+import com.luxegem.dashboard.model.CreateNotificationRequest;
 import com.luxegem.dashboard.model.InvoiceResponse;
 import com.luxegem.dashboard.model.InventoryResponse;
+import com.luxegem.dashboard.model.MarkAllReadResponse;
 import com.luxegem.dashboard.model.MarketRateResponse;
+import com.luxegem.dashboard.model.NotificationResponse;
 import com.luxegem.dashboard.model.OverviewResponse;
 import com.luxegem.dashboard.model.SalesCategoryResponse;
 import com.luxegem.dashboard.model.StockAlertResponse;
+import com.luxegem.dashboard.model.UnreadCountResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -126,6 +131,53 @@ public class DashboardAggregationService {
                                 .bodyValue(request)
                                 .retrieve()
                                 .bodyToMono(InventoryResponse.class)
+                                .block();
+        }
+
+        public List<NotificationResponse> listNotifications(String authorizationHeader, int limit) {
+                return invoiceClient.get()
+                                .uri(uriBuilder -> uriBuilder.path("/api/notifications").queryParam("limit", limit).build())
+                                .header("Authorization", authorizationHeader)
+                                .retrieve()
+                                .bodyToMono(new ParameterizedTypeReference<List<NotificationResponse>>() {
+                                })
+                                .block();
+        }
+
+        public UnreadCountResponse unreadCount(String authorizationHeader) {
+                return invoiceClient.get()
+                                .uri("/api/notifications/unread-count")
+                                .header("Authorization", authorizationHeader)
+                                .retrieve()
+                                .bodyToMono(UnreadCountResponse.class)
+                                .block();
+        }
+
+        public NotificationResponse markNotificationRead(String authorizationHeader, Long id) {
+                return invoiceClient.method(HttpMethod.PATCH)
+                                .uri("/api/notifications/{id}/read", id)
+                                .header("Authorization", authorizationHeader)
+                                .retrieve()
+                                .bodyToMono(NotificationResponse.class)
+                                .block();
+        }
+
+        public MarkAllReadResponse markAllNotificationsRead(String authorizationHeader) {
+                return invoiceClient.method(HttpMethod.PATCH)
+                                .uri("/api/notifications/read-all")
+                                .header("Authorization", authorizationHeader)
+                                .retrieve()
+                                .bodyToMono(MarkAllReadResponse.class)
+                                .block();
+        }
+
+        public NotificationResponse createNotification(String authorizationHeader, CreateNotificationRequest request) {
+                return invoiceClient.post()
+                                .uri("/api/notifications")
+                                .header("Authorization", authorizationHeader)
+                                .bodyValue(request)
+                                .retrieve()
+                                .bodyToMono(NotificationResponse.class)
                                 .block();
         }
 }

@@ -12,6 +12,7 @@ interface MonolithicDashboardProps {
   shopContact: string
   shopGst: string
   shopEmail: string
+  externalTab?: string
 }
 
 export function MonolithicDashboard({
@@ -23,9 +24,20 @@ export function MonolithicDashboard({
   shopAddress,
   shopContact,
   shopGst,
-  shopEmail
+  shopEmail,
+  externalTab
 }: MonolithicDashboardProps) {
-  const [activeView, setActiveView] = useState<'dashboard' | 'invoices' | 'allInvoices' | 'customers'>('dashboard')
+  const [activeView, setActiveView] = useState<'dashboard' | 'invoices' | 'allInvoices' | 'customers'>(() => {
+    if (externalTab === 'Customers') return 'customers'
+    if (externalTab === 'Billing') return 'invoices'
+    return 'dashboard'
+  })
+
+  useEffect(() => {
+    if (externalTab === 'Customers') setActiveView('customers')
+    if (externalTab === 'Billing') setActiveView('invoices')
+    if (externalTab === 'Dashboard') setActiveView('dashboard')
+  }, [externalTab])
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'All' | 'Paid' | 'Pending' | 'Draft'>('All')
@@ -265,8 +277,8 @@ export function MonolithicDashboard({
                   <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
                     <label>Items</label>
                     <div className="items-table" style={{ marginTop: '0.5rem' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'var(--bg-primary)', borderRadius: '8px', overflow: 'hidden' }}>
-                        <thead style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                        <thead style={{ backgroundColor: '#f8fafc', color: '#1e3a8a' }}>
                           <tr>
                             <th style={{ padding: '0.8rem', textAlign: 'left', fontSize: '0.85rem' }}>Description</th>
                             <th style={{ padding: '0.8rem', textAlign: 'left', fontSize: '0.85rem' }}>Details</th>
@@ -275,13 +287,13 @@ export function MonolithicDashboard({
                         </thead>
                         <tbody>
                           {selectedInvoice.items.map((item, idx) => (
-                            <tr key={idx} style={{ borderTop: '1px solid var(--border-color)' }}>
-                              <td style={{ padding: '0.8rem', fontSize: '0.9rem', fontWeight: 500 }}>{item.description}</td>
-                              <td style={{ padding: '0.8rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                                ₹{item.rate}/g • {item.type}<br />
+                            <tr key={idx} style={{ borderTop: '1px solid #e2e8f0' }}>
+                              <td style={{ padding: '0.8rem', fontSize: '0.9rem', fontWeight: 500, color: '#1e3a8a' }}>{item.description}</td>
+                              <td style={{ padding: '0.8rem', fontSize: '0.85rem', color: '#64748b' }}>
+                                ₹{item.rate}/g • {formatInvoiceType(item.type)}<br />
                                 <span style={{ fontSize: '0.75rem' }}>MC: {item.makingChargePercent}% | GST: {item.gstRatePercent}%</span>
                               </td>
-                              <td style={{ padding: '0.8rem', textAlign: 'right', fontWeight: 600, color: 'var(--primary-color)' }}>{item.weight}g</td>
+                              <td style={{ padding: '0.8rem', textAlign: 'right', fontWeight: 600, color: '#1e3a8a' }}>{item.weight}g</td>
                             </tr>
                           ))}
                         </tbody>
@@ -447,6 +459,8 @@ export function MonolithicDashboard({
               const customerInvoices = data.invoices.filter(inv => inv.customer === customer)
               const totalSpent = customerInvoices.reduce((sum, inv) => sum + inv.amount, 0)
 
+              if (totalSpent <= 0) return null;
+
               return (
                 <div key={customer} className="customer-card">
                   <div className="customer-avatar">
@@ -464,12 +478,24 @@ export function MonolithicDashboard({
                     </div>
                   </div>
                   <div className="customer-purchases">
+                    <h4 style={{ fontSize: '0.85rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Recent Purchases</h4>
                     {customerInvoices.slice(0, 3).map((inv) => (
-                      <div key={inv.invoiceId} className="purchase">
-                        <span>{formatInvoiceType(inv.type)}</span>
-                        <span className={`status status-${inv.status.toLowerCase()}`}>
-                          {inv.status}
-                        </span>
+                      <div key={inv.invoiceId} className="purchase-detail-card" style={{ padding: '0.75rem', background: '#f8fafc', borderRadius: '8px', marginBottom: '0.5rem', border: '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', alignItems: 'center' }}>
+                          <span style={{ fontWeight: 'bold', color: '#1e3a8a', fontSize: '0.85rem' }}>#{inv.invoiceId}</span>
+                          <span className={`status status-${inv.status.toLowerCase()}`} style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', margin: 0 }}>
+                            {inv.status}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.4rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {inv.items?.map(i => i.description).join(', ') || 'No items listed'}
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem' }}>
+                          <span style={{ color: '#059669', fontWeight: 'bold' }}>{formatMoney(inv.amount)}</span>
+                          <span style={{ color: '#94a3b8' }}>
+                            {new Date(inv.createdAt || (inv as any).issueDate || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </span>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -509,7 +535,11 @@ export function MonolithicDashboard({
                   </div>
                   <div className="invoice-meta-item">
                     <span className="invoice-meta-label">Date:</span>
-                    <span className="invoice-meta-value">{new Date(viewingInvoiceTemplate!.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                    <span className="invoice-meta-value">
+                      {viewingInvoiceTemplate!.createdAt || (viewingInvoiceTemplate as any).issueDate
+                        ? new Date(viewingInvoiceTemplate!.createdAt || (viewingInvoiceTemplate as any).issueDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })
+                        : 'N/A'}
+                    </span>
                   </div>
                 </div>
               </div>
