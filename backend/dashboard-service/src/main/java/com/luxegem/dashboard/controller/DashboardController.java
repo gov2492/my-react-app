@@ -8,6 +8,7 @@ import com.luxegem.dashboard.model.InvoiceResponse;
 import com.luxegem.dashboard.model.InventoryResponse;
 import com.luxegem.dashboard.model.MarkAllReadResponse;
 import com.luxegem.dashboard.model.NotificationResponse;
+import com.luxegem.dashboard.model.SalesReportResponse;
 import com.luxegem.dashboard.model.UnreadCountResponse;
 import com.luxegem.dashboard.service.DashboardAggregationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -120,6 +121,39 @@ public class DashboardController {
     ) {
         logger.debug("Creating inventory with Authorization header");
         return dashboardAggregationService.createInventory(authorization, request);
+    }
+
+    @GetMapping("/reports/sales")
+    public SalesReportResponse salesReport(
+            @RequestHeader("Authorization") String authorization,
+            @RequestParam(defaultValue = "THIS_MONTH") String dateFilter,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String paymentMethod,
+            @RequestParam(required = false) String metalType,
+            @RequestParam(required = false) String salesperson,
+            @RequestParam(required = false) Double minAmount,
+            @RequestParam(required = false) Double maxAmount,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "date") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        return dashboardAggregationService.getSalesReport(
+                authorization,
+                dateFilter,
+                from,
+                to,
+                search,
+                paymentMethod,
+                metalType,
+                salesperson,
+                minAmount,
+                maxAmount,
+                page,
+                size,
+                sortBy,
+                sortDir);
     }
 
     @GetMapping("/notifications")

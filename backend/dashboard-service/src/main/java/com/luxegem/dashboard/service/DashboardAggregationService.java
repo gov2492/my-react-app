@@ -11,6 +11,7 @@ import com.luxegem.dashboard.model.MarketRateResponse;
 import com.luxegem.dashboard.model.NotificationResponse;
 import com.luxegem.dashboard.model.OverviewResponse;
 import com.luxegem.dashboard.model.SalesCategoryResponse;
+import com.luxegem.dashboard.model.SalesReportResponse;
 import com.luxegem.dashboard.model.StockAlertResponse;
 import com.luxegem.dashboard.model.UnreadCountResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -178,6 +179,63 @@ public class DashboardAggregationService {
                                 .bodyValue(request)
                                 .retrieve()
                                 .bodyToMono(NotificationResponse.class)
+                                .block();
+        }
+
+        public SalesReportResponse getSalesReport(
+                        String authorizationHeader,
+                        String dateFilter,
+                        String from,
+                        String to,
+                        String search,
+                        String paymentMethod,
+                        String metalType,
+                        String salesperson,
+                        Double minAmount,
+                        Double maxAmount,
+                        int page,
+                        int size,
+                        String sortBy,
+                        String sortDir) {
+                return invoiceClient.get()
+                                .uri(uriBuilder -> {
+                                        var builder = uriBuilder.path("/api/reports/sales")
+                                                        .queryParam("dateFilter", dateFilter)
+                                                        .queryParam("page", page)
+                                                        .queryParam("size", size)
+                                                        .queryParam("sortBy", sortBy)
+                                                        .queryParam("sortDir", sortDir);
+
+                                        if (from != null && !from.isBlank()) {
+                                                builder.queryParam("from", from);
+                                        }
+                                        if (to != null && !to.isBlank()) {
+                                                builder.queryParam("to", to);
+                                        }
+                                        if (search != null && !search.isBlank()) {
+                                                builder.queryParam("search", search);
+                                        }
+                                        if (paymentMethod != null && !paymentMethod.isBlank()) {
+                                                builder.queryParam("paymentMethod", paymentMethod);
+                                        }
+                                        if (metalType != null && !metalType.isBlank()) {
+                                                builder.queryParam("metalType", metalType);
+                                        }
+                                        if (salesperson != null && !salesperson.isBlank()) {
+                                                builder.queryParam("salesperson", salesperson);
+                                        }
+                                        if (minAmount != null) {
+                                                builder.queryParam("minAmount", minAmount);
+                                        }
+                                        if (maxAmount != null) {
+                                                builder.queryParam("maxAmount", maxAmount);
+                                        }
+
+                                        return builder.build();
+                                })
+                                .header("Authorization", authorizationHeader)
+                                .retrieve()
+                                .bodyToMono(SalesReportResponse.class)
                                 .block();
         }
 }

@@ -7,7 +7,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.Locale;
-import java.util.UUID;
 import java.util.Map;
 
 @Component
@@ -40,6 +39,10 @@ public class AuthDataInitializer implements CommandLineRunner {
                 user.setEmail(username + "@example.com");
                 changed = true;
             }
+            if (user.getShopId() == null || user.getShopId().isBlank()) {
+                user.setShopId(username);
+                changed = true;
+            }
             // Always ensure the admin account password matches the desired default in case
             // it was created with an old password.
             if ("admin".equals(username)) {
@@ -58,7 +61,7 @@ public class AuthDataInitializer implements CommandLineRunner {
                 passwordEncoder.encode(password),
                 role,
                 defaultShopName(username),
-                UUID.randomUUID().toString(),
+                username,
                 username + "@example.com"));
     }
 

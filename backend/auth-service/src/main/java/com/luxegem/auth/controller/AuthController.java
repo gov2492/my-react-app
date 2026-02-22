@@ -76,6 +76,20 @@ public class AuthController {
                     "Your account has been disabled. Please contact support.");
         }
 
+        boolean changed = false;
+        if (user.getShopId() == null || user.getShopId().isBlank()) {
+            // Keep legacy accounts compatible with historical username-based shop IDs.
+            user.setShopId(user.getUsername());
+            changed = true;
+        }
+        if (user.getShopName() == null || user.getShopName().isBlank()) {
+            user.setShopName(resolveShopName(user.getUsername(), null));
+            changed = true;
+        }
+        if (changed) {
+            user = appUserRepository.save(user);
+        }
+
         String token = jwtTokenService.generateToken(user.getUsername(), user.getRole(), user.getShopId());
         return new AuthResponse(token, "Bearer", jwtTokenService.expirationSeconds(), user.getShopName(),
                 user.getShopId(), user.getRole(), user.getLogoUrl(), user.getEmail(), user.getAddress(),

@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
@@ -15,7 +16,11 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 @Entity
-@Table(name = "invoices")
+@Table(name = "invoices", indexes = {
+        @Index(name = "idx_invoice_shop_date", columnList = "shop_id, issue_date"),
+        @Index(name = "idx_invoice_shop_status", columnList = "shop_id, status"),
+        @Index(name = "idx_invoice_shop_payment", columnList = "shop_id, payment_method")
+})
 public class InvoiceEntity {
 
     @Id

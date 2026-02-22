@@ -207,12 +207,6 @@ public class BillingService {
                                 item.getCategory(),
                                 item.getMetalType(),
                                 item.getPurity(),
-                                item.getGrossWeight() == null ? 0.0 : item.getGrossWeight().doubleValue(),
-                                item.getNetWeight() == null ? null : item.getNetWeight().doubleValue(),
-                                item.getMakingCharge() == null ? null : item.getMakingCharge().doubleValue(),
-                                item.getRatePerGram() == null ? 0.0 : item.getRatePerGram().doubleValue(),
-                                item.getStockQuantity() == null ? 0 : item.getStockQuantity(),
-                                item.getHsnCode(),
                                 item.getDescription());
         }
 }

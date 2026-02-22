@@ -46,12 +46,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String username = jwtService.extractUsername(token);
             String shopId = jwtService.extractShopId(token);
-            if (username != null && !username.isEmpty() && shopId != null && jwtService.isTokenValid(token)) {
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(shopId,
+            if (username != null && !username.isEmpty() && jwtService.isTokenValid(token)) {
+                String effectiveShopId = (shopId != null && !shopId.isBlank()) ? shopId : username;
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(effectiveShopId,
                         null, Collections.emptyList());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                logger.debug("JWT Token validated for user: {}, shopId: {}", username, shopId);
+                logger.debug("JWT Token validated for user: {}, shopId: {}", username, effectiveShopId);
             } else {
                 logger.warn("JWT Token validation failed - token invalid or username empty");
             }

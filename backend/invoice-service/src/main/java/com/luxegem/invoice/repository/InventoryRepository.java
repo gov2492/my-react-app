@@ -30,5 +30,5 @@ public interface InventoryRepository extends JpaRepository<InventoryEntity, Long
 
     List<InventoryEntity> findByCategory(String category);
 
-    
+    List<InventoryEntity> findByStockQuantityLessThanEqual(Integer stockQuantity);
 }

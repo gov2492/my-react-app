@@ -35,6 +35,24 @@ public class InventoryEntity {
     @Column
     private String purity;
 
+    @Column(precision = 10, scale = 3)
+    private BigDecimal grossWeight;
+
+    @Column(precision = 10, scale = 3)
+    private BigDecimal netWeight;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal makingCharge;
+
+    @Column(precision = 12, scale = 2)
+    private BigDecimal ratePerGram;
+
+    @Column
+    private Integer stockQuantity;
+
+    @Column
+    private String hsnCode;
+
     @Column(length = 2000)
     private String description;
 
@@ -62,6 +80,33 @@ public class InventoryEntity {
         this.category = category;
         this.metalType = metalType;
         this.purity = purity;
+        this.description = description;
+    }
+
+    public InventoryEntity(
+            String itemCode,
+            String itemName,
+            String category,
+            String metalType,
+            String purity,
+            BigDecimal grossWeight,
+            BigDecimal netWeight,
+            BigDecimal makingCharge,
+            BigDecimal ratePerGram,
+            Integer stockQuantity,
+            String hsnCode,
+            String description) {
+        this.itemCode = itemCode;
+        this.itemName = itemName;
+        this.category = category;
+        this.metalType = metalType;
+        this.purity = purity;
+        this.grossWeight = grossWeight;
+        this.netWeight = netWeight;
+        this.makingCharge = makingCharge;
+        this.ratePerGram = ratePerGram;
+        this.stockQuantity = stockQuantity;
+        this.hsnCode = hsnCode;
         this.description = description;
     }
 

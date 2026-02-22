@@ -7,11 +7,13 @@ import { MonolithicDashboard } from './components/MonolithicDashboard'
 import { InventoryEnhanced } from './components/InventoryEnhanced'
 import { AdminShops } from './components/AdminShops'
 import { ForgotPassword } from './components/ForgotPassword'
+import { SalesReportTab } from './components/SalesReportTab'
 import { NotificationCenter } from './components/NotificationCenter'
 import { ToastViewport } from './components/ToastViewport'
 import { useNotifications } from './context/NotificationContext'
 import './styles/billing-dashboard.css'
 import './styles/dashboard-premium.css'
+import './styles/sales-report.css'
 
 const dateFormatter = new Intl.DateTimeFormat('en-US', {
   month: 'short',
@@ -604,6 +606,8 @@ export default function App() {
 
           {activeTab === 'Shops' ? (
             <AdminShops token={token} />
+          ) : activeTab === 'Reports' ? (
+            <SalesReportTab token={token} formatMoney={formatMoney} globalSearch={searchQuery} />
           ) : activeTab === 'Dashboard' || activeTab === 'Customers' || activeTab === 'Billing' ? (
             <MonolithicDashboard
               data={data}
