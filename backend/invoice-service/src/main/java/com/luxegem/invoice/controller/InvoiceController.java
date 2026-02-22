@@ -66,7 +66,9 @@ public class InvoiceController {
                                                 invoice.getGstRate() != null ? invoice.getGstRate().doubleValue()
                                                                 : 0.0,
                                                 invoice.getPaymentMethod() != null ? invoice.getPaymentMethod()
-                                                                : "CASH"))
+                                                                : "CASH",
+                                                invoice.getIssueDate() != null ? invoice.getIssueDate().atStartOfDay()
+                                                                : LocalDate.now().atStartOfDay()))
                                 .toList();
         }
 
@@ -111,6 +113,8 @@ public class InvoiceController {
                                 entity.getDiscount().doubleValue(),
                                 entity.getMakingCharge() != null ? entity.getMakingCharge().doubleValue() : 0.0,
                                 entity.getGstRate() != null ? entity.getGstRate().doubleValue() : 0.0,
-                                entity.getPaymentMethod() != null ? entity.getPaymentMethod() : "CASH");
+                                entity.getPaymentMethod() != null ? entity.getPaymentMethod() : "CASH",
+                                entity.getIssueDate() != null ? entity.getIssueDate().atStartOfDay()
+                                                : LocalDate.now().atStartOfDay());
         }
 }

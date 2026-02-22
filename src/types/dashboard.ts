@@ -29,6 +29,7 @@ export interface Invoice {
   type: InvoiceType
   amount: number
   status: 'Paid' | 'Pending' | 'Draft'
+  createdAt: string
   mobilenumber?: string
   address?: string
   makingCharge: number

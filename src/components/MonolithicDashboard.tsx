@@ -493,88 +493,97 @@ export function MonolithicDashboard({
               {/* Header Section */}
               <div className="invoice-header-section">
                 <div className="company-branding">
-                  <h1>💎 {jewellerName.toUpperCase()}</h1>
-                  <p className="subtitle">Premium Gold, Platinum & Silver Shop</p>
+                  <h1>{jewellerName}</h1>
+                  <div className="subtitle">Premium Jewellery Retailer</div>
+                  <div className="company-contact">
+                    <p>GSTIN: {shopGst || '27XXXXXXXXXXXXXX01'}</p>
+                    <p>{shopAddress || '123 Jewellery Park, Main Market, City'}</p>
+                    <p>📞 {shopContact || '+91-XXXXXXXXXX'} | ✉️ {shopEmail || (data.invoices.length > 0 ? `info@${jewellerName.toLowerCase().replace(/\s+/g, '')}.com` : 'info@luxegem.local')}</p>
+                  </div>
                 </div>
-                <div className="company-contact">
-                  <p>📱 {shopContact || '+91-XXXXXXXXXX'}</p>
-                  <p>✉️ {shopEmail || (data.invoices.length > 0 ? `info@${jewellerName.toLowerCase().replace(/\s+/g, '')}.com` : 'info@luxegem.local')}</p>
-                  <p>📍 {shopAddress || 'Address, City, State'}</p>
-                </div>
-              </div>
-
-              {/* Invoice Title */}
-              <div className="invoice-title-section">
-                <h2>INVOICE</h2>
-                <div className={`invoice-status-badge status-${viewingInvoiceTemplate!.status.toLowerCase()}`}>
-                  {viewingInvoiceTemplate!.status}
-                </div>
-              </div>
-
-              {/* Invoice Info Grid */}
-              <div className="invoice-info-grid">
-                <div className="info-box">
-                  <label>Invoice Number</label>
-                  <p>{viewingInvoiceTemplate!.invoiceId}</p>
-                </div>
-                <div className="info-box">
-                  <label>Invoice Date</label>
-                  <p>{new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                </div>
-                <div className="info-box">
-                  <label>GST Number</label>
-                  <p>{shopGst || '27XXXXXXXXXXXXXX01'}</p>
+                <div className="invoice-meta">
+                  <h2 className="invoice-title">INVOICE</h2>
+                  <div className="invoice-meta-item">
+                    <span className="invoice-meta-label">Invoice No:</span>
+                    <span className="invoice-meta-value">{viewingInvoiceTemplate!.invoiceId}</span>
+                  </div>
+                  <div className="invoice-meta-item">
+                    <span className="invoice-meta-label">Date:</span>
+                    <span className="invoice-meta-value">{new Date(viewingInvoiceTemplate!.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                  </div>
                 </div>
               </div>
 
               {/* Customer Details */}
               <div className="customer-section">
-                <h3>Customer Details</h3>
-                <div className="detail-grid">
-                  <div>
-                    <strong>Name:</strong> {viewingInvoiceTemplate!.customer}
+                <div className="customer-column">
+                  <h3>Bill To</h3>
+                  <div className="customer-row">
+                    <span className="label">Customer Name:</span>
+                    <span className="value">{viewingInvoiceTemplate!.customer}</span>
                   </div>
-                  <div>
-                    <strong>Mobile Number:</strong> {viewingInvoiceTemplate!.mobilenumber || 'N/A'}
+                  <div className="customer-row">
+                    <span className="label">Mobile Number:</span>
+                    <span className="value">{viewingInvoiceTemplate!.mobilenumber || 'N/A'}</span>
                   </div>
-                  <div>
-                    <strong>Address:</strong> {viewingInvoiceTemplate!.address || 'N/A'}
+                  <div className="customer-row">
+                    <span className="label">Address:</span>
+                    <span className="value">{viewingInvoiceTemplate!.address || 'N/A'}</span>
+                  </div>
+                </div>
+                <div className="customer-column">
+                  <h3>Invoice Details</h3>
+                  <div className="customer-row">
+                    <span className="label">Salesperson:</span>
+                    <span className="value">Admin / Staff</span>
+                  </div>
+                  <div className="customer-row">
+                    <span className="label">Status:</span>
+                    <span className="value">{viewingInvoiceTemplate!.status}</span>
+                  </div>
+                  <div className="customer-row">
+                    <span className="label">Payment Type:</span>
+                    <span className="value">{viewingInvoiceTemplate!.paymentMethod || 'Cash'}</span>
                   </div>
                 </div>
               </div>
 
               {/* Items Table Section */}
-              <div className="invoice-items-section" style={{ marginTop: '2rem' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', borderBottom: '2px solid var(--border-color)', fontSize: '0.9rem' }}>
+              <div className="invoice-items-section">
+                <table className="premium-table">
                   <thead>
-                    <tr style={{ borderBottom: '2px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>
-                      <th style={{ padding: '0.75rem' }}>S.No</th>
-                      <th style={{ padding: '0.75rem' }}>Description</th>
-                      <th style={{ padding: '0.75rem' }}>Type</th>
-                      <th style={{ padding: '0.75rem' }}>Weight (g)</th>
-                      <th style={{ padding: '0.75rem' }}>Rate (₹/g)</th>
-                      <th style={{ padding: '0.75rem' }}>MC (%)</th>
-                      <th style={{ padding: '0.75rem' }}>GST (%)</th>
-                      <th style={{ padding: '0.75rem', textAlign: 'right' }}>Amount</th>
+                    <tr>
+                      <th className="col-center">Sr.No</th>
+                      <th className="col-left">Description</th>
+                      <th className="col-center">Metal Type</th>
+                      <th className="col-center">Purity</th>
+                      <th className="col-right">Weight (g)</th>
+                      <th className="col-right">Rate (₹/g)</th>
+                      <th className="col-right">MC (%)</th>
+                      <th className="col-right">Amount (₹)</th>
                     </tr>
                   </thead>
                   <tbody>
                     {viewingInvoiceTemplate!.items.map((item, idx) => {
                       const base = item.weight * item.rate;
                       const mc = base * (item.makingChargePercent / 100);
-                      const gst = (base + mc) * (item.gstRatePercent / 100);
-                      const total = base + mc + gst;
+                      const totalBeforeGst = base + mc;
+
+                      // Display logic: show type dynamically (e.g. GOLD_22K -> GOLD, 22K)
+                      const parts = item.type.split('_');
+                      const metalStr = parts[0] || item.type;
+                      const purityStr = parts[1] || '-';
 
                       return (
-                        <tr key={idx} style={{ borderBottom: '1px solid var(--border-color-light)' }}>
-                          <td style={{ padding: '0.75rem' }}>{idx + 1}</td>
-                          <td style={{ padding: '0.75rem', fontWeight: 500 }}>{item.description}</td>
-                          <td style={{ padding: '0.75rem' }}>{item.type}</td>
-                          <td style={{ padding: '0.75rem' }}>{item.weight.toFixed(3)}</td>
-                          <td style={{ padding: '0.75rem' }}>₹{item.rate.toFixed(2)}</td>
-                          <td style={{ padding: '0.75rem' }}>{item.makingChargePercent}%</td>
-                          <td style={{ padding: '0.75rem' }}>{item.gstRatePercent}%</td>
-                          <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: 600 }}>{formatMoney(total)}</td>
+                        <tr key={idx}>
+                          <td className="col-center">{idx + 1}</td>
+                          <td className="col-left item-desc">{item.description}</td>
+                          <td className="col-center">{metalStr}</td>
+                          <td className="col-center">{purityStr}</td>
+                          <td className="col-right">{item.weight.toFixed(3)}</td>
+                          <td className="col-right">{formatMoney(item.rate).replace('₹', '')}</td>
+                          <td className="col-right">{item.makingChargePercent}%</td>
+                          <td className="col-right">{formatMoney(totalBeforeGst).replace('₹', '')}</td>
                         </tr>
                       );
                     })}
@@ -582,48 +591,60 @@ export function MonolithicDashboard({
                 </table>
               </div>
 
-              {/* Amount Section */}
-              <div className="amount-section">
-                <div className="amount-box highlight">
-                  <div className="amount-label">Subtotal</div>
-                  <div className="amount-value">{formatMoney(viewingInvoiceTemplate!.grossAmount)}</div>
-                </div>
-                <div className="amount-box total">
-                  <div className="amount-label">Total Amount</div>
-                  <div className="amount-value-large">{formatMoney(viewingInvoiceTemplate!.amount)}</div>
+              {/* Calculations Section */}
+              <div className="invoice-summary-section">
+                <div className="summary-box">
+                  <div className="summary-row">
+                    <span>Base Amount</span>
+                    <span className="value">{formatMoney(viewingInvoiceTemplate!.items.reduce((acc, curr) => acc + (curr.weight * curr.rate), 0))}</span>
+                  </div>
+                  <div className="summary-row">
+                    <span>Total Making Charges</span>
+                    <span className="value">{formatMoney(viewingInvoiceTemplate!.items.reduce((acc, curr) => acc + ((curr.weight * curr.rate) * (curr.makingChargePercent / 100)), 0))}</span>
+                  </div>
+                  <div className="summary-row">
+                    <span>Subtotal Before GST</span>
+                    <span className="value">{formatMoney(viewingInvoiceTemplate!.grossAmount)}</span>
+                  </div>
+                  <div className="summary-row">
+                    <span>Add: Total GST ({viewingInvoiceTemplate?.items[0]?.gstRatePercent || 3}%)</span>
+                    <span className="value">{formatMoney(viewingInvoiceTemplate!.amount - viewingInvoiceTemplate!.grossAmount + viewingInvoiceTemplate!.discount)}</span>
+                  </div>
+                  {viewingInvoiceTemplate!.discount > 0 && (
+                    <div className="summary-row">
+                      <span>Less: Discount</span>
+                      <span className="value" style={{ color: '#dc2626' }}>- {formatMoney(viewingInvoiceTemplate!.discount)}</span>
+                    </div>
+                  )}
+                  <div className="summary-row total">
+                    <span>Net Payable</span>
+                    <span className="value">{formatMoney(viewingInvoiceTemplate!.amount)}</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Payment Info */}
-              <div className="payment-section">
-                <div className="payment-status">
-                  <strong>Payment Status:</strong> {viewingInvoiceTemplate!.status}
+              {/* Footer Section */}
+              <div className="invoice-bottom-layout">
+                <div className="terms-box">
+                  <h4>Terms & Conditions</h4>
+                  <ul>
+                    <li>Goods once sold will not be taken back without proper bill.</li>
+                    <li>Exchange is valid within 7 days in original condition.</li>
+                    <li>All disputes are subject to local jurisdiction only.</li>
+                    <li>Making charges and GST are applicable as per government norms.</li>
+                    <li>Please keep this invoice safely for warranty and future exchange.</li>
+                  </ul>
                 </div>
-                <div className="payment-method">
-                  <strong>Payment Method:</strong> {viewingInvoiceTemplate!.paymentMethod || 'Cash'}
-                </div>
-              </div>
 
-              {/* Terms & Conditions */}
-              <div className="terms-section">
-                <h4>Terms & Conditions</h4>
-                <ul>
-                  <li>Items are sold as per description provided</li>
-                  <li>No returns or refunds accepted after 7 days</li>
-                  <li>All prices are inclusive of GST</li>
-                  <li>Payment method as per invoice status</li>
-                  <li>Please keep this invoice for warranty purposes</li>
-                </ul>
-              </div>
-
-              {/* Footer */}
-              <div className="invoice-footer">
-                <div className="signature-section">
-                  <div className="signature-line"></div>
+                <div className="signature-box">
+                  <div className="line"></div>
                   <p>Authorized Signatory</p>
+                  <span>For {jewellerName}</span>
                 </div>
-                <p className="footer-text">Thank you for choosing {jewellerName}! 🙏</p>
-                <p className="generated-date">Generated on {new Date().toLocaleString('en-IN')}</p>
+              </div>
+
+              <div className="thank-you-msg">
+                Thank you for shopping with us! Looking forward to serving you again.
               </div>
             </div>
           </div>
