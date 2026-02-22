@@ -16,196 +16,203 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Service
 @Transactional
 public class BillingService {
 
-    private static final Logger logger = LoggerFactory.getLogger(BillingService.class);
+        private static final Logger logger = LoggerFactory.getLogger(BillingService.class);
 
-    private final InvoiceRepository invoiceRepository;
-    private final InventoryRepository inventoryRepository;
+        private final InvoiceRepository invoiceRepository;
+        private final InventoryRepository inventoryRepository;
 
-    public BillingService(InvoiceRepository invoiceRepository, InventoryRepository inventoryRepository) {
-        this.invoiceRepository = invoiceRepository;
-        this.inventoryRepository = inventoryRepository;
-    }
-
-    /**
-     * Create invoice with detailed items from inventory
-     */
-    public InvoiceDetailedResponse createDetailedInvoice(CreateDetailedInvoiceRequest request) {
-        logger.info("Creating detailed invoice for customer: {}", request.customer());
-
-        // Validate and fetch items from inventory
-        List<InvoiceItemDetail> itemDetails = new ArrayList<>();
-        BigDecimal totalAmount = BigDecimal.ZERO;
-
-        for (String sku : request.itemSKUs()) {
-            Optional<InventoryEntity> inventoryItem = inventoryRepository.findBySku(sku);
-            if (inventoryItem.isPresent()) {
-                InventoryEntity item = inventoryItem.get();
-                InvoiceItemDetail detail = new InvoiceItemDetail(
-                        item.getSku(),
-                        item.getItemName(),
-                        item.getType(),
-                        item.getWeightGrams().doubleValue(),
-                        request.quantities().getOrDefault(sku, 1),
-                        item.getUnitPrice().doubleValue(),
-                        item.getUnitPrice().multiply(BigDecimal.valueOf(request.quantities().getOrDefault(sku, 1)))
-                                .doubleValue());
-                itemDetails.add(detail);
-                totalAmount = totalAmount.add(BigDecimal.valueOf(detail.lineTotal()));
-            } else {
-                logger.warn("SKU not found in inventory: {}", sku);
-            }
+        public BillingService(InvoiceRepository invoiceRepository, InventoryRepository inventoryRepository) {
+                this.invoiceRepository = invoiceRepository;
+                this.inventoryRepository = inventoryRepository;
         }
 
-        // Generate invoice ID
-        String generatedInvoiceId = generateInvoiceId();
+        /**
+         * Create invoice with detailed items from inventory
+         */
+        public InvoiceDetailedResponse createDetailedInvoice(CreateDetailedInvoiceRequest request) {
+                logger.info("Creating detailed invoice for customer: {}", request.customer());
 
-        // Convert items to JSON for storage
-        List<InvoiceItemDto> itemDtos = convertToDtos(itemDetails);
+                // Validate and fetch items from inventory
+                List<InvoiceItemDetail> itemDetails = new ArrayList<>();
+                BigDecimal totalAmount = BigDecimal.ZERO;
 
-        // Create and save invoice entity
-        InvoiceEntity invoiceEntity = new InvoiceEntity(
-                generatedInvoiceId,
-                request.customer(),
-                itemDtos,
-                request.type(),
-                totalAmount,
-                "Pending",
-                LocalDate.now());
+                for (String sku : request.itemSKUs()) {
+                        Optional<InventoryEntity> inventoryItem = inventoryRepository.findByItemCode(sku);
+                        if (inventoryItem.isPresent()) {
+                                InventoryEntity item = inventoryItem.get();
+                                InvoiceItemDetail detail = new InvoiceItemDetail(
+                                                item.getItemCode(),
+                                                item.getItemName(),
+                                                item.getMetalType() + "_" + item.getPurity(),
+                                                item.getGrossWeight().doubleValue(),
+                                                request.quantities().getOrDefault(sku, 1),
+                                                item.getRatePerGram().doubleValue(),
+                                                item.getRatePerGram()
+                                                                .multiply(BigDecimal.valueOf(request.quantities()
+                                                                                .getOrDefault(sku, 1)))
+                                                                .doubleValue());
+                                itemDetails.add(detail);
+                                totalAmount = totalAmount.add(BigDecimal.valueOf(detail.lineTotal()));
 
-        InvoiceEntity savedInvoice = invoiceRepository.save(invoiceEntity);
-        logger.info("Invoice created successfully: {}", generatedInvoiceId);
+                                // Deduct stock quantity
+                                item.setStockQuantity(
+                                                item.getStockQuantity() - request.quantities().getOrDefault(sku, 1));
+                                inventoryRepository.save(item);
+                        } else {
+                                logger.warn("Item Code not found in inventory: {}", sku);
+                        }
+                }
 
-        // Return detailed response
-        return new InvoiceDetailedResponse(
-                savedInvoice.getInvoiceId(),
-                savedInvoice.getCustomer(),
-                itemDetails,
-                savedInvoice.getType(),
-                totalAmount.doubleValue(),
-                "Pending",
-                LocalDate.now().toString(),
-                calculateTaxAndTotal(totalAmount.doubleValue()));
-    }
+                // Generate invoice ID
+                String generatedInvoiceId = generateInvoiceId();
 
-    /**
-     * Get invoice with detailed item breakdown
-     */
-    public InvoiceDetailedResponse getInvoiceDetails(String invoiceId) {
-        logger.info("Fetching invoice details: {}", invoiceId);
+                // Convert items to JSON for storage
+                List<InvoiceItemDto> itemDtos = convertToDtos(itemDetails);
 
-        InvoiceEntity invoice = invoiceRepository.findByInvoiceId(invoiceId)
-                .orElseThrow(() -> new RuntimeException("Invoice not found: " + invoiceId));
+                // Create and save invoice entity
+                InvoiceEntity invoiceEntity = new InvoiceEntity(
+                                generatedInvoiceId,
+                                request.customer(),
+                                itemDtos,
+                                request.type(),
+                                totalAmount,
+                                "Pending",
+                                LocalDate.now());
 
-        // Parse items from JSON
-        List<InvoiceItemDetail> itemDetails = convertToDetails(invoice.getItems());
-        BigDecimal totalAmount = invoice.getAmount();
+                InvoiceEntity savedInvoice = invoiceRepository.save(invoiceEntity);
+                logger.info("Invoice created successfully: {}", generatedInvoiceId);
 
-        return new InvoiceDetailedResponse(
-                invoice.getInvoiceId(),
-                invoice.getCustomer(),
-                itemDetails,
-                invoice.getType(),
-                totalAmount.doubleValue(),
-                invoice.getStatus(),
-                invoice.getIssueDate().toString(),
-                calculateTaxAndTotal(totalAmount.doubleValue()));
-    }
+                // Return detailed response
+                return new InvoiceDetailedResponse(
+                                savedInvoice.getInvoiceId(),
+                                savedInvoice.getCustomer(),
+                                itemDetails,
+                                savedInvoice.getType(),
+                                totalAmount.doubleValue(),
+                                "Pending",
+                                LocalDate.now().toString(),
+                                calculateTaxAndTotal(totalAmount.doubleValue()));
+        }
 
-    /**
-     * Get all available inventory items
-     */
-    public List<InventoryItemResponse> getAvailableItems() {
-        logger.info("Fetching all available inventory items");
-        return inventoryRepository.findAll().stream()
-                .map(item -> new InventoryItemResponse(
-                        item.getSku(),
-                        item.getItemName(),
-                        item.getType(),
-                        item.getWeightGrams().doubleValue(),
-                        item.getQuantity(),
-                        item.getUnitPrice().doubleValue(),
-                        item.getLowStockThreshold()))
-                .toList();
-    }
+        /**
+         * Get invoice with detailed item breakdown
+         */
+        public InvoiceDetailedResponse getInvoiceDetails(String invoiceId) {
+                logger.info("Fetching invoice details: {}", invoiceId);
 
-    /**
-     * Search inventory items by type
-     */
-    public List<InventoryItemResponse> searchItemsByType(String type) {
-        logger.info("Searching inventory items by type: {}", type);
-        return inventoryRepository.findByType(type).stream()
-                .map(item -> new InventoryItemResponse(
-                        item.getSku(),
-                        item.getItemName(),
-                        item.getType(),
-                        item.getWeightGrams().doubleValue(),
-                        item.getQuantity(),
-                        item.getUnitPrice().doubleValue(),
-                        item.getLowStockThreshold()))
-                .toList();
-    }
+                InvoiceEntity invoice = invoiceRepository.findByInvoiceId(invoiceId)
+                                .orElseThrow(() -> new RuntimeException("Invoice not found: " + invoiceId));
 
-    /**
-     * Get low stock alerts
-     */
-    public List<InventoryItemResponse> getLowStockItems() {
-        logger.info("Fetching low stock inventory items");
-        return inventoryRepository.findAll().stream()
-                .filter(item -> item.getQuantity() <= item.getLowStockThreshold())
-                .map(item -> new InventoryItemResponse(
-                        item.getSku(),
-                        item.getItemName(),
-                        item.getType(),
-                        item.getWeightGrams().doubleValue(),
-                        item.getQuantity(),
-                        item.getUnitPrice().doubleValue(),
-                        item.getLowStockThreshold()))
-                .toList();
-    }
+                // Parse items from JSON
+                List<InvoiceItemDetail> itemDetails = convertToDetails(invoice.getItems());
+                BigDecimal totalAmount = invoice.getAmount();
 
-    // ========== PRIVATE HELPER METHODS ==========
+                return new InvoiceDetailedResponse(
+                                invoice.getInvoiceId(),
+                                invoice.getCustomer(),
+                                itemDetails,
+                                invoice.getType(),
+                                totalAmount.doubleValue(),
+                                invoice.getStatus(),
+                                invoice.getIssueDate().toString(),
+                                calculateTaxAndTotal(totalAmount.doubleValue()));
+        }
 
-    private String generateInvoiceId() {
-        long lastId = invoiceRepository.findTopByOrderByIdDesc()
-                .map(InvoiceEntity::getId)
-                .orElse(2040L);
-        return "#INV-" + (lastId + 1);
-    }
+        /**
+         * Get all available inventory items
+         */
+        public List<InventoryItemResponse> getAvailableItems() {
+                logger.info("Fetching all available inventory items");
+                return inventoryRepository.findAll().stream()
+                                .map(this::toInventoryItemResponse)
+                                .toList();
+        }
 
-    private List<InvoiceItemDto> convertToDtos(List<InvoiceItemDetail> items) {
-        if (items == null)
-            return new ArrayList<>();
-        return items.stream()
-                .map(item -> new InvoiceItemDto(item.itemName(), item.type(), item.weightGrams(), item.unitPrice(), 0.0,
-                        0.0))
-                .toList();
-    }
+        /**
+         * Search inventory items by type
+         */
+        public List<InventoryItemResponse> searchItemsByType(String type) {
+                logger.info("Searching inventory items by type: {}", type);
+                return inventoryRepository.findByCategory(type).stream()
+                                .map(this::toInventoryItemResponse)
+                                .toList();
+        }
 
-    private List<InvoiceItemDetail> convertToDetails(List<InvoiceItemDto> items) {
-        if (items == null)
-            return new ArrayList<>();
-        return items.stream()
-                .map(item -> new InvoiceItemDetail("N/A", item.description(), item.type(),
-                        item.weight() == null ? 0.0 : item.weight(), 1, item.rate() == null ? 0.0 : item.rate(),
-                        (item.weight() == null ? 0.0 : item.weight()) * (item.rate() == null ? 0.0 : item.rate())))
-                .toList();
-    }
+        /**
+         * Get low stock alerts
+         */
+        public List<InventoryItemResponse> getLowStockItems() {
+                logger.info("Fetching low stock inventory items");
+                return inventoryRepository.findByStockQuantityLessThanEqual(5).stream()
+                                .map(this::toInventoryItemResponse)
+                                .toList();
+        }
 
-    private Map<String, Object> calculateTaxAndTotal(double subtotal) {
-        double taxRate = 0.18; // 18% GST for India
-        double taxAmount = subtotal * taxRate;
-        double total = subtotal + taxAmount;
+        // ========== PRIVATE HELPER METHODS ==========
 
-        return Map.of(
-                "subtotal", subtotal,
-                "taxRate", taxRate * 100,
-                "taxAmount", taxAmount,
-                "total", total);
-    }
+        private String generateInvoiceId() {
+                long lastId = invoiceRepository.findTopByOrderByIdDesc()
+                                .map(InvoiceEntity::getId)
+                                .orElse(2040L);
+                return "#INV-" + (lastId + 1);
+        }
+
+        private List<InvoiceItemDto> convertToDtos(List<InvoiceItemDetail> items) {
+                if (items == null)
+                        return new ArrayList<>();
+                return items.stream()
+                                .map(item -> new InvoiceItemDto(item.itemName(), item.type(), item.weightGrams(),
+                                                item.unitPrice(), 0.0,
+                                                0.0))
+                                .toList();
+        }
+
+        private List<InvoiceItemDetail> convertToDetails(List<InvoiceItemDto> items) {
+                if (items == null)
+                        return new ArrayList<>();
+                return items.stream()
+                                .map(item -> new InvoiceItemDetail("N/A", item.description(), item.type(),
+                                                item.weight() == null ? 0.0 : item.weight(), 1,
+                                                item.rate() == null ? 0.0 : item.rate(),
+                                                (item.weight() == null ? 0.0 : item.weight())
+                                                                * (item.rate() == null ? 0.0 : item.rate())))
+                                .toList();
+        }
+
+        private Map<String, Object> calculateTaxAndTotal(double subtotal) {
+                double taxRate = 0.18; // 18% GST for India
+                double taxAmount = subtotal * taxRate;
+                double total = subtotal + taxAmount;
+
+                return Map.of(
+                                "subtotal", subtotal,
+                                "taxRate", taxRate * 100,
+                                "taxAmount", taxAmount,
+                                "total", total);
+        }
+
+        private InventoryItemResponse toInventoryItemResponse(InventoryEntity item) {
+                return new InventoryItemResponse(
+                                item.getItemCode(),
+                                item.getItemName(),
+                                item.getCategory(),
+                                item.getMetalType(),
+                                item.getPurity(),
+                                item.getGrossWeight() == null ? 0.0 : item.getGrossWeight().doubleValue(),
+                                item.getNetWeight() == null ? null : item.getNetWeight().doubleValue(),
+                                item.getMakingCharge() == null ? null : item.getMakingCharge().doubleValue(),
+                                item.getRatePerGram() == null ? 0.0 : item.getRatePerGram().doubleValue(),
+                                item.getStockQuantity() == null ? 0 : item.getStockQuantity(),
+                                item.getHsnCode(),
+                                item.getDescription());
+        }
 }

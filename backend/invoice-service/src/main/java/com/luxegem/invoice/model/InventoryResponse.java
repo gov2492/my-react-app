@@ -1,13 +1,12 @@
 package com.luxegem.invoice.model;
 
 public record InventoryResponse(
-        String sku,
-        String itemName,
-        String type,
-        double weightGrams,
-        int quantity,
-        double unitPrice,
-        int lowStockThreshold,
-        String updatedAt
-) {
+                String itemCode,
+                String itemName,
+                String category,
+                String metalType,
+                String purity,
+                String description,
+                String updatedAt,
+                String createdAt) {
 }

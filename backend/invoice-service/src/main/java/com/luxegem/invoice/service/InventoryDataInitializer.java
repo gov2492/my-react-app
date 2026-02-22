@@ -23,20 +23,18 @@ public class InventoryDataInitializer implements CommandLineRunner {
                         return;
                 }
 
-                InventoryEntity inv1 = new InventoryEntity("AJ-INV-0001", "Gold Necklace Floral", "GOLD_22K",
-                                new BigDecimal("38.500"), 6, new BigDecimal("245000.00"), 2);
+                InventoryEntity inv1 = new InventoryEntity("AJ-INV-0001", "Gold Necklace Floral", "Necklace", "GOLD",
+                                "22K", "Beautiful floral pattern.");
                 inv1.setShopId("akash");
-                InventoryEntity inv2 = new InventoryEntity("AJ-INV-0002", "Bridal Bangle Set", "GOLD_24K",
-                                new BigDecimal("62.200"), 3, new BigDecimal("515000.00"), 1);
+                InventoryEntity inv2 = new InventoryEntity("AJ-INV-0002", "Bridal Bangle Set", "Bangle", "GOLD", "22K", "Heavy bridal set.");
                 inv2.setShopId("luxegem");
-                InventoryEntity inv3 = new InventoryEntity("AJ-INV-0003", "Diamond Stud Earrings", "DIAMOND",
-                                new BigDecimal("4.750"), 9, new BigDecimal("98500.00"), 3);
+                InventoryEntity inv3 = new InventoryEntity("AJ-INV-0003", "Diamond Stud Earrings", "Earring", "GOLD",
+                                "18K", "Classic diamond studs.");
                 inv3.setShopId("royal");
-                InventoryEntity inv4 = new InventoryEntity("AJ-INV-0004", "Silver Pooja Coin", "SILVER",
-                                new BigDecimal("20.000"), 25, new BigDecimal("2400.00"), 8);
+                InventoryEntity inv4 = new InventoryEntity("AJ-INV-0004", "Silver Pooja Coin", "Coin", "SILVER", "99", "Pure silver coin.");
                 inv4.setShopId("shree");
-                InventoryEntity inv5 = new InventoryEntity("AJ-INV-0005", "Platinum Band Premium", "PLATINUM",
-                                new BigDecimal("9.400"), 4, new BigDecimal("72000.00"), 2);
+                InventoryEntity inv5 = new InventoryEntity("AJ-INV-0005", "Platinum Band Premium", "Ring", "PLATINUM",
+                                "950", "Men's premium band.");
                 inv5.setShopId("akash");
 
                 inventoryRepository.saveAll(List.of(inv1, inv2, inv3, inv4, inv5));

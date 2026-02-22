@@ -19,17 +19,4 @@ public record InvoiceResponse(
                 double gstRate,
                 String paymentMethod,
                 LocalDateTime createdAt) {
-        }
-        String mobilenumber,
-        String address,
-        List<InvoiceItemDto> items,
-                        String type,
-        double amount,
-                        String status,
-        double grossAmount,
-        double netAmount,
-        double discount,
-        double makingCharge,
-        double gstRate,
-                        String paymentMethod){
 }

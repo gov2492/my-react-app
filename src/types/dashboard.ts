@@ -79,22 +79,27 @@ export interface CreateInvoicePayload {
 }
 
 export interface InventoryItem {
-  sku: string
+  itemCode: string
   itemName: string
-  type: InvoiceType
-  weightGrams: number
-  quantity: number
-  unitPrice: number
-  lowStockThreshold: number
+  category: string
+  metalType: string
+  purity?: string
+  grossWeight: number
+  netWeight?: number
+  makingCharge?: number
+  ratePerGram: number
+  stockQuantity: number
+  hsnCode?: string
+  description?: string
   updatedAt: string
+  createdAt: string
 }
 
 export interface CreateInventoryPayload {
-  sku?: string
+  itemCode?: string
   itemName: string
-  type: InvoiceType
-  weightGrams: number
-  quantity: number
-  unitPrice: number
-  lowStockThreshold: number
+  category: string
+  metalType: string
+  purity?: string
+  description?: string
 }

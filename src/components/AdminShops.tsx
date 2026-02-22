@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { register } from '../api/authApi';
 import { AdminShopList } from './AdminShopList';
+import { useNotifications } from '../context/NotificationContext';
 
 interface AdminShopsProps {
     token: string;
 }
 
 export const AdminShops: React.FC<AdminShopsProps> = ({ token }) => {
+    const { createNewNotification, pushToast } = useNotifications();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [email, setEmail] = useState('');
@@ -38,6 +40,20 @@ export const AdminShops: React.FC<AdminShopsProps> = ({ token }) => {
                 contactNumber,
                 logoUrl
             });
+
+            void createNewNotification({
+                shopId: 'ADMIN',
+                title: 'New shop onboarded',
+                message: `${shopName} was onboarded by admin.`,
+                type: 'INFO'
+            }).catch(() => undefined);
+
+            pushToast({
+                title: 'Shop created',
+                message: `${shopName} onboarded successfully.`,
+                type: 'SUCCESS'
+            });
+
             setSuccess(`Shop "${shopName}" created successfully!`);
             setUsername('');
             setPassword('');

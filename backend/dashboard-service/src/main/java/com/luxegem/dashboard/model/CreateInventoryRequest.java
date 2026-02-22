@@ -4,17 +4,18 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 
 public record CreateInventoryRequest(
-        String sku,
-        @NotBlank String itemName,
-        @NotBlank
-        @Pattern(regexp = "GOLD_18K|GOLD_22K|GOLD_24K|SILVER|PLATINUM|DIAMOND|OTHER")
-        String type,
-        @NotNull @DecimalMin("0.001") Double weightGrams,
-        @NotNull @Min(0) Integer quantity,
-        @NotNull @DecimalMin("0.01") Double unitPrice,
-        @NotNull @Min(0) Integer lowStockThreshold
-) {
+                String itemCode,
+                @NotBlank String itemName,
+                @NotBlank String category,
+                @NotBlank String metalType,
+                @NotBlank String purity,
+                @NotNull @DecimalMin("0.001") Double grossWeight,
+                Double netWeight,
+                Double makingCharge,
+                @NotNull @DecimalMin("0.01") Double ratePerGram,
+                @NotNull @Min(0) Integer stockQuantity,
+                String hsnCode,
+                String description) {
 }

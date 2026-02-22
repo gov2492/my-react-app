@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { forgotPassword, verifyOtp, resetPassword } from '../api/authApi'
+import { useNotifications } from '../context/NotificationContext'
 import '../styles/billing-dashboard.css'
 
 interface ForgotPasswordProps {
@@ -9,6 +10,7 @@ interface ForgotPasswordProps {
 type Step = 'IDENTIFIER' | 'OTP' | 'RESET'
 
 export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack }) => {
+    const { pushToast } = useNotifications()
     const [step, setStep] = useState<Step>('IDENTIFIER')
     const [identifier, setIdentifier] = useState('')
     const [otp, setOtp] = useState('')
@@ -104,6 +106,11 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack }) => {
         try {
             await resetPassword(identifier, otp, newPassword)
             setSuccess('Password updated successfully. Please login.')
+            pushToast({
+                title: 'Password changed',
+                message: 'Your password has been updated successfully.',
+                type: 'SUCCESS'
+            })
 
             // Auto-redirect to login after 2 seconds
             setTimeout(() => {

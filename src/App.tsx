@@ -7,6 +7,9 @@ import { MonolithicDashboard } from './components/MonolithicDashboard'
 import { InventoryEnhanced } from './components/InventoryEnhanced'
 import { AdminShops } from './components/AdminShops'
 import { ForgotPassword } from './components/ForgotPassword'
+import { NotificationCenter } from './components/NotificationCenter'
+import { ToastViewport } from './components/ToastViewport'
+import { useNotifications } from './context/NotificationContext'
 import './styles/billing-dashboard.css'
 import './styles/dashboard-premium.css'
 
@@ -62,13 +65,12 @@ const defaultInvoiceForm: CreateInvoicePayload = {
 }
 
 const defaultInventoryForm: CreateInventoryPayload = {
-  sku: '',
+  itemCode: '',
   itemName: '',
-  type: 'GOLD_22K',
-  weightGrams: 1,
-  quantity: 1,
-  unitPrice: 1000,
-  lowStockThreshold: 1
+  category: 'Necklace',
+  metalType: 'Gold',
+  purity: '22K',
+  description: ''
 }
 
 const invoiceTypeOptions: Array<{ value: InvoiceType; label: string }> = [
@@ -81,9 +83,7 @@ const invoiceTypeOptions: Array<{ value: InvoiceType; label: string }> = [
   { value: 'OTHER', label: 'Other' }
 ]
 
-function formatInvoiceType(type: InvoiceType): string {
-  return invoiceTypeOptions.find((option) => option.value === type)?.label ?? type
-}
+// Removed formatInvoiceType as it's not used
 
 // Wrapper for components that expect string type
 const formatInvoiceTypeFlexible = (type: InvoiceType | string): string => {
@@ -96,6 +96,7 @@ function formatDateTime(value: string): string {
 }
 
 export default function App() {
+  const { setAuthToken, pushToast } = useNotifications()
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('luxegem_token'))
   const [loggedInUsername, setLoggedInUsername] = useState<string>(() => localStorage.getItem('luxegem_username') || 'admin')
   const [jewellerName, setJewellerName] = useState<string>(() => localStorage.getItem('luxegem_jeweller_name') || 'Jewellery Dashboard')
@@ -232,6 +233,7 @@ export default function App() {
       setShopContact(auth.contactNumber || '')
       setShopGst(auth.gstNumber || '')
       setShopEmail(auth.email || '')
+      setAuthToken(auth.token)
     } catch (err) {
       setAuthError(err instanceof Error ? err.message : 'Login failed')
     } finally {
@@ -293,6 +295,11 @@ export default function App() {
       setShowCreateModal(false)
       setInvoiceForm(defaultInvoiceForm)
       setInvoiceItems([{ description: '', type: 'GOLD_22K', weight: '', rate: '', makingChargePercent: '8', gstRatePercent: '3' }])
+      pushToast({
+        title: 'Invoice created',
+        message: `${createdInvoice.invoiceId} has been created successfully.`,
+        type: 'SUCCESS'
+      })
 
       // Auto-open print view for the new invoice. Delay allows new state to mount.
       if (createdInvoice && createdInvoice.invoiceId) {
@@ -317,10 +324,15 @@ export default function App() {
     setCreateError(null)
 
     try {
-      await createInventory(token, inventoryForm)
+      const createdInventory = await createInventory(token, inventoryForm)
       await loadInventory(token, searchQuery)
       setShowInventoryModal(false)
       setInventoryForm(defaultInventoryForm)
+      pushToast({
+        title: 'Inventory item added',
+        message: `${createdInventory.itemName} is now available in inventory.`,
+        type: 'INFO'
+      })
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : 'Failed to create inventory')
     } finally {
@@ -339,6 +351,7 @@ export default function App() {
     localStorage.removeItem('luxegem_shop_contact')
     localStorage.removeItem('luxegem_shop_gst')
     setToken(null)
+    setAuthToken(null)
     setLoggedInUsername('admin')
     setJewellerName('Jewellery Dashboard')
     setUserRole('shop')
@@ -351,13 +364,14 @@ export default function App() {
 
   if (!token) {
     return (
-      <div className="login-screen">
-        <div className="animated-bg">
-          <div className="gradient-orb orb-1"></div>
-          <div className="gradient-orb orb-2"></div>
-          <div className="gradient-orb orb-3"></div>
-        </div>
-        <div className="login-shell">
+      <>
+        <div className="login-screen">
+          <div className="animated-bg">
+            <div className="gradient-orb orb-1"></div>
+            <div className="gradient-orb orb-2"></div>
+            <div className="gradient-orb orb-3"></div>
+          </div>
+          <div className="login-shell">
           <section className="login-showcase">
             <div className="showcase-content">
               <div className="showcase-badge">
@@ -487,26 +501,36 @@ export default function App() {
               </div>
             </form>
           )}
+          </div>
         </div>
-      </div>
+        <ToastViewport />
+      </>
     )
   }
 
   if (loading) {
-    return <div className="status">Loading dashboard...</div>
+    return (
+      <>
+        <div className="status">Loading dashboard...</div>
+        <ToastViewport />
+      </>
+    )
   }
 
   if (error || !data) {
     return (
-      <div className="status error" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', paddingTop: '100px' }}>
-        <div>{error ?? 'Dashboard failed to load.'}</div>
-        <button
-          onClick={onLogout}
-          style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #ff4d4f', background: '#ffe6e6', color: '#ff4d4f', cursor: 'pointer' }}
-        >
-          Clear Session & Return to Login
-        </button>
-      </div>
+      <>
+        <div className="status error" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', paddingTop: '100px' }}>
+          <div>{error ?? 'Dashboard failed to load.'}</div>
+          <button
+            onClick={onLogout}
+            style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #ff4d4f', background: '#ffe6e6', color: '#ff4d4f', cursor: 'pointer' }}
+          >
+            Clear Session & Return to Login
+          </button>
+        </div>
+        <ToastViewport />
+      </>
     )
   }
 
@@ -574,12 +598,13 @@ export default function App() {
             />
             <div className="topbar-right">
               <button className="date-pill">{dateLabel}</button>
+              <NotificationCenter />
             </div>
           </header>
 
           {activeTab === 'Shops' ? (
             <AdminShops token={token} />
-          ) : activeTab === 'Dashboard' ? (
+          ) : activeTab === 'Dashboard' || activeTab === 'Customers' || activeTab === 'Billing' ? (
             <MonolithicDashboard
               data={data}
               formatMoney={formatMoney}
@@ -590,6 +615,7 @@ export default function App() {
               shopContact={shopContact}
               shopGst={shopGst}
               shopEmail={shopEmail}
+              externalTab={activeTab}
             />
           ) : (
             <InventoryEnhanced
@@ -598,7 +624,6 @@ export default function App() {
               error={inventoryError}
               searchQuery={searchQuery}
               formatMoney={formatMoney}
-              formatInvoiceType={formatInvoiceType}
               formatDateTime={formatDateTime}
               onAddClick={() => setShowInventoryModal(true)}
             />
@@ -686,16 +711,42 @@ export default function App() {
                           <div className="form-field">
                             <label>Item Description</label>
                             <input
-                              placeholder="e.g. Diamond Stud Earrings"
+                              list={`inventory-suggest-${idx}`}
+                              placeholder="Search Inventory (Code or Name)"
                               value={item.description}
                               onChange={(e) => {
-                                const newItems = invoiceItems.map((it, i) =>
-                                  i === idx ? { ...it, description: e.target.value } : it
-                                )
+                                const val = e.target.value;
+                                const newItems = [...invoiceItems];
+                                newItems[idx] = { ...newItems[idx], description: val };
+
+                                // Auto-fill if match found
+                                const matchedInv = inventory.find(inv =>
+                                  inv.itemName === val ||
+                                  inv.itemCode === val ||
+                                  `${inv.itemCode} - ${inv.itemName}` === val
+                                );
+
+                                if (matchedInv) {
+                                  newItems[idx].description = matchedInv.itemName;
+
+                                  // Simplified type mapping (since metalType is basic now)
+                                  if (matchedInv.metalType === 'Gold') {
+                                    newItems[idx].type = `GOLD_${matchedInv.purity}` as any;
+                                  } else {
+                                    newItems[idx].type = matchedInv.metalType.toUpperCase() as any;
+                                  }
+                                }
                                 setInvoiceItems(newItems)
                               }}
                               required
                             />
+                            <datalist id={`inventory-suggest-${idx}`}>
+                              {inventory.map(inv => (
+                                <option key={inv.itemCode} value={`${inv.itemCode} - ${inv.itemName}`}>
+                                  {inv.category} • {inv.metalType} {inv.purity ? `• ${inv.purity}` : ''}
+                                </option>
+                              ))}
+                            </datalist>
                           </div>
                         </div>
                         <div className="form-grid form-grid-5">
@@ -934,84 +985,142 @@ export default function App() {
       )}
 
       {showInventoryModal && (
-        <div className="modal-overlay" onClick={() => setShowInventoryModal(false)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-            <h2>Add Inventory</h2>
-            <form onSubmit={onCreateInventory} className="invoice-form">
-              <input
-                placeholder="SKU (optional, auto-generated if empty)"
-                value={inventoryForm.sku ?? ''}
-                onChange={(e) => setInventoryForm((prev) => ({ ...prev, sku: e.target.value }))}
-              />
-              <input
-                placeholder="Item Name"
-                value={inventoryForm.itemName}
-                onChange={(e) => setInventoryForm((prev) => ({ ...prev, itemName: e.target.value }))}
-                required
-              />
-              <select
-                value={inventoryForm.type}
-                onChange={(e) =>
-                  setInventoryForm((prev) => ({ ...prev, type: e.target.value as CreateInventoryPayload['type'] }))
-                }
-              >
-                {invoiceTypeOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="number"
-                min="0.001"
-                step="0.001"
-                placeholder="Weight (grams)"
-                value={inventoryForm.weightGrams || ''}
-                onChange={(e) => setInventoryForm((prev) => ({ ...prev, weightGrams: Number(e.target.value) }))}
-                required
-              />
-              <input
-                type="number"
-                min="0"
-                placeholder="Quantity"
-                value={inventoryForm.quantity || ''}
-                onChange={(e) => setInventoryForm((prev) => ({ ...prev, quantity: Number(e.target.value) }))}
-                required
-              />
-              <input
-                type="number"
-                min="0.01"
-                step="0.01"
-                placeholder="Unit Price (INR)"
-                value={inventoryForm.unitPrice || ''}
-                onChange={(e) => setInventoryForm((prev) => ({ ...prev, unitPrice: Number(e.target.value) }))}
-                required
-              />
-              <input
-                type="number"
-                min="0"
-                placeholder="Low Stock Threshold"
-                value={inventoryForm.lowStockThreshold || ''}
-                onChange={(e) =>
-                  setInventoryForm((prev) => ({ ...prev, lowStockThreshold: Number(e.target.value) }))
-                }
-                required
-              />
+        <div className="modal-overlay" onClick={() => setShowInventoryModal(false)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(10, 15, 30, 0.7)', backdropFilter: 'blur(8px)', zIndex: 1000, position: 'fixed', inset: 0 }}>
+          <div className="inventory-creation-card" onClick={(e) => e.stopPropagation()} style={{ background: '#ffffff', borderRadius: '16px', width: '100%', maxWidth: '600px', padding: '2.5rem', boxShadow: '0 20px 40px rgba(0,0,0,0.2)', color: '#1A202C', fontFamily: "'Inter', sans-serif" }}>
 
-              {createError && <div className="login-error">{createError}</div>}
+            <div style={{ marginBottom: '2rem', borderBottom: '2px solid #D4AF37', paddingBottom: '1rem' }}>
+              <h2 style={{ fontSize: '1.8rem', color: '#1A202C', margin: '0 0 0.5rem 0', fontWeight: 'bold' }}>Add New Jewellery Item</h2>
+              <p style={{ color: '#718096', margin: 0, fontSize: '1rem' }}>Create item for billing reference</p>
+            </div>
 
-              <div className="modal-actions">
-                <button type="button" className="secondary-btn" onClick={() => setShowInventoryModal(false)}>
+            <form onSubmit={onCreateInventory} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.9rem', fontWeight: 600, color: '#4A5568' }}>Item Name <span style={{ color: '#E53E3E' }}>*</span></label>
+                  <input
+                    placeholder="e.g. Diamond Pendant"
+                    value={inventoryForm.itemName}
+                    onChange={(e) => setInventoryForm((prev) => ({ ...prev, itemName: e.target.value }))}
+                    style={{ padding: '0.8rem 1rem', borderRadius: '12px', border: '1px solid #E2E8F0', outline: 'none', transition: 'all 0.2s', fontSize: '1rem', background: '#F7FAFC', color: '#2D3748' }}
+                    onFocus={(e) => { e.target.style.borderColor = '#D4AF37'; e.target.style.boxShadow = '0 0 0 3px rgba(212, 175, 55, 0.15)'; e.target.style.background = '#fff'; }}
+                    onBlur={(e) => { e.target.style.borderColor = '#E2E8F0'; e.target.style.boxShadow = 'none'; e.target.style.background = '#F7FAFC'; }}
+                    required
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.9rem', fontWeight: 600, color: '#4A5568' }}>Category <span style={{ color: '#E53E3E' }}>*</span></label>
+                  <select
+                    value={inventoryForm.category}
+                    onChange={(e) => setInventoryForm((prev) => ({ ...prev, category: e.target.value }))}
+                    style={{ padding: '0.8rem 1rem', borderRadius: '12px', border: '1px solid #E2E8F0', outline: 'none', transition: 'all 0.2s', fontSize: '1rem', background: '#F7FAFC', color: '#2D3748', cursor: 'pointer', appearance: 'none' }}
+                    onFocus={(e) => { e.target.style.borderColor = '#D4AF37'; e.target.style.boxShadow = '0 0 0 3px rgba(212, 175, 55, 0.15)'; e.target.style.background = '#fff'; }}
+                    onBlur={(e) => { e.target.style.borderColor = '#E2E8F0'; e.target.style.boxShadow = 'none'; e.target.style.background = '#F7FAFC'; }}
+                    required
+                  >
+                    <option value="Ring">Ring</option>
+                    <option value="Necklace">Necklace</option>
+                    <option value="Chain">Chain</option>
+                    <option value="Bangle">Bangle</option>
+                    <option value="Coin">Coin</option>
+                    <option value="Pendant">Pendant</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                <label style={{ fontSize: '0.9rem', fontWeight: 600, color: '#4A5568' }}>Metal Type <span style={{ color: '#E53E3E' }}>*</span></label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+                  {['Gold', 'Silver', 'Platinum'].map(metal => (
+                    <div
+                      key={metal}
+                      onClick={() => setInventoryForm(prev => ({ ...prev, metalType: metal }))}
+                      style={{
+                        padding: '1rem',
+                        textAlign: 'center',
+                        borderRadius: '12px',
+                        border: inventoryForm.metalType === metal ? '2px solid #D4AF37' : '1px solid #E2E8F0',
+                        background: inventoryForm.metalType === metal ? 'rgba(212, 175, 55, 0.05)' : '#F7FAFC',
+                        color: inventoryForm.metalType === metal ? '#D4AF37' : '#4A5568',
+                        fontWeight: inventoryForm.metalType === metal ? 'bold' : 'normal',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease-in-out',
+                        transform: inventoryForm.metalType === metal ? 'translateY(-2px)' : 'none',
+                        boxShadow: inventoryForm.metalType === metal ? '0 4px 12px rgba(212, 175, 55, 0.1)' : 'none'
+                      }}
+                    >
+                      {metal}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{
+                opacity: inventoryForm.metalType === 'Gold' ? 1 : 0,
+                height: inventoryForm.metalType === 'Gold' ? 'auto' : 0,
+                overflow: 'hidden',
+                transition: 'all 0.3s ease',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.5rem'
+              }}>
+                <label style={{ fontSize: '0.9rem', fontWeight: 600, color: '#4A5568' }}>Purity</label>
+                <select
+                  value={inventoryForm.purity || '22K'}
+                  onChange={(e) => setInventoryForm((prev) => ({ ...prev, purity: e.target.value }))}
+                  style={{ padding: '0.8rem 1rem', borderRadius: '12px', border: '1px solid #E2E8F0', outline: 'none', transition: 'all 0.2s', fontSize: '1rem', background: '#F7FAFC', color: '#2D3748', cursor: 'pointer', appearance: 'none', width: '50%' }}
+                  onFocus={(e) => { e.target.style.borderColor = '#D4AF37'; e.target.style.boxShadow = '0 0 0 3px rgba(212, 175, 55, 0.15)'; e.target.style.background = '#fff'; }}
+                  onBlur={(e) => { e.target.style.borderColor = '#E2E8F0'; e.target.style.boxShadow = 'none'; e.target.style.background = '#F7FAFC'; }}
+                >
+                  <option value="18K">18K</option>
+                  <option value="22K">22K</option>
+                  <option value="24K">24K</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <label style={{ fontSize: '0.9rem', fontWeight: 600, color: '#4A5568' }}>Description (Optional)</label>
+                <textarea
+                  placeholder="Additional details regarding the item..."
+                  value={inventoryForm.description || ''}
+                  onChange={(e) => setInventoryForm((prev) => ({ ...prev, description: e.target.value }))}
+                  rows={3}
+                  style={{ padding: '0.8rem 1rem', borderRadius: '12px', border: '1px solid #E2E8F0', outline: 'none', transition: 'all 0.2s', fontSize: '1rem', background: '#F7FAFC', color: '#2D3748', resize: 'vertical' }}
+                  onFocus={(e) => { e.target.style.borderColor = '#D4AF37'; e.target.style.boxShadow = '0 0 0 3px rgba(212, 175, 55, 0.15)'; e.target.style.background = '#fff'; }}
+                  onBlur={(e) => { e.target.style.borderColor = '#E2E8F0'; e.target.style.boxShadow = 'none'; e.target.style.background = '#F7FAFC'; }}
+                />
+              </div>
+
+              {createError && <div style={{ padding: '1rem', background: '#FFF5F5', color: '#C53030', borderRadius: '8px', fontSize: '0.9rem', border: '1px solid #FEB2B2' }}>{createError}</div>}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowInventoryModal(false)}
+                  style={{ padding: '0.8rem 1.5rem', background: 'transparent', color: '#4A5568', border: '1px solid #E2E8F0', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '1rem', transition: 'all 0.2s' }}
+                  onMouseOver={(e) => e.currentTarget.style.background = '#EDF2F7'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                >
                   Cancel
                 </button>
-                <button type="submit" className="primary-btn" disabled={savingInventory}>
-                  {savingInventory ? 'Saving...' : 'Add Inventory'}
+                <button
+                  type="submit"
+                  disabled={savingInventory}
+                  style={{ padding: '0.8rem 1.5rem', background: 'linear-gradient(135deg, #D4AF37 0%, #AA8C2C 100%)', color: '#FFF', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '1rem', transition: 'all 0.2s', boxShadow: '0 4px 10px rgba(212, 175, 55, 0.3)', opacity: savingInventory ? 0.7 : 1 }}
+                  onMouseOver={(e) => { if (!savingInventory) e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                  onMouseOut={(e) => { if (!savingInventory) e.currentTarget.style.transform = 'none'; }}
+                >
+                  {savingInventory ? 'Saving...' : '✨ Save Item'}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      <ToastViewport />
     </>
   )
 }
