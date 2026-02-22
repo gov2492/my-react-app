@@ -130,6 +130,11 @@ export default function App() {
   const [inventoryError, setInventoryError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [reportRangeType, setReportRangeType] = useState<'YTD' | 'MTD' | 'WTD' | 'CUSTOM'>('MTD')
+  const [customStartDate, setCustomStartDate] = useState<string>('')
+  const [customEndDate, setCustomEndDate] = useState<string>('')
+
+  const todayDateInput = useMemo(() => new Date().toISOString().slice(0, 10), [])
 
   const loadDashboard = async (authToken: string) => {
     setLoading(true)
@@ -185,6 +190,69 @@ export default function App() {
     const date = data?.overview.date ? new Date(data.overview.date) : new Date()
     return dateFormatter.format(date)
   }, [data])
+
+  const salesReport = useMemo(() => {
+    const invoices = data?.invoices ?? []
+    const now = new Date()
+
+    const startOfYear = new Date(now.getFullYear(), 0, 1)
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const weekday = now.getDay()
+    const diffToMonday = weekday === 0 ? 6 : weekday - 1
+    const startOfWeek = new Date(now)
+    startOfWeek.setDate(now.getDate() - diffToMonday)
+    startOfWeek.setHours(0, 0, 0, 0)
+
+    let startDate: Date | null = null
+    let endDate: Date | null = null
+
+    if (reportRangeType === 'YTD') {
+      startDate = startOfYear
+      endDate = now
+    } else if (reportRangeType === 'MTD') {
+      startDate = startOfMonth
+      endDate = now
+    } else if (reportRangeType === 'WTD') {
+      startDate = startOfWeek
+      endDate = now
+    } else if (reportRangeType === 'CUSTOM') {
+      startDate = customStartDate ? new Date(customStartDate) : null
+      endDate = customEndDate ? new Date(customEndDate) : null
+      if (endDate) {
+        endDate.setHours(23, 59, 59, 999)
+      }
+    }
+
+    const filteredInvoices = invoices.filter((invoice) => {
+      const invoiceDate = new Date(invoice.createdAt)
+      if (Number.isNaN(invoiceDate.getTime())) {
+        return false
+      }
+      if (startDate && invoiceDate < startDate) {
+        return false
+      }
+      if (endDate && invoiceDate > endDate) {
+        return false
+      }
+      return true
+    })
+
+    const totalSales = filteredInvoices.reduce((sum, invoice) => sum + invoice.amount, 0)
+    const paidSales = filteredInvoices
+      .filter((invoice) => invoice.status === 'Paid')
+      .reduce((sum, invoice) => sum + invoice.amount, 0)
+    const pendingSales = filteredInvoices
+      .filter((invoice) => invoice.status === 'Pending')
+      .reduce((sum, invoice) => sum + invoice.amount, 0)
+
+    return {
+      filteredInvoices,
+      totalSales,
+      paidSales,
+      pendingSales,
+      rangeLabel: reportRangeType === 'CUSTOM' ? 'Custom Date Range' : reportRangeType
+    }
+  }, [customEndDate, customStartDate, data?.invoices, reportRangeType])
 
   const onLogin = async (event: FormEvent) => {
     event.preventDefault()
@@ -617,6 +685,103 @@ export default function App() {
               shopEmail={shopEmail}
               externalTab={activeTab}
             />
+          ) : activeTab === 'Reports' ? (
+            <section className="table-card large" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className="table-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+                <div>
+                  <h3 style={{ margin: 0 }}>Sales Report</h3>
+                  <p style={{ margin: '0.35rem 0 0 0', color: '#a0abc0', fontSize: '0.9rem' }}>
+                    Sales summary based on invoice sale amount
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {(['YTD', 'MTD', 'WTD', 'CUSTOM'] as const).map((range) => (
+                    <button
+                      key={range}
+                      type="button"
+                      className="date-pill"
+                      onClick={() => setReportRangeType(range)}
+                      style={{
+                        cursor: 'pointer',
+                        opacity: reportRangeType === range ? 1 : 0.65,
+                        borderColor: reportRangeType === range ? '#d4af37' : undefined
+                      }}
+                    >
+                      {range}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {reportRangeType === 'CUSTOM' && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', color: '#cfd8ea', fontSize: '0.9rem' }}>
+                    Start date
+                    <input type="date" value={customStartDate} max={customEndDate || todayDateInput} onChange={(e) => setCustomStartDate(e.target.value)} />
+                  </label>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', color: '#cfd8ea', fontSize: '0.9rem' }}>
+                    End date
+                    <input type="date" value={customEndDate} min={customStartDate || undefined} max={todayDateInput} onChange={(e) => setCustomEndDate(e.target.value)} />
+                  </label>
+                </div>
+              )}
+
+              <div className="stats-footer" style={{ marginTop: '0.25rem' }}>
+                <div className="stat-item">
+                  <span className="stat-label">Report Type</span>
+                  <span className="stat-number">{salesReport.rangeLabel}</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-label">Total Sales</span>
+                  <span className="stat-number">{formatMoney(salesReport.totalSales)}</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-label">Paid Sales</span>
+                  <span className="stat-number">{formatMoney(salesReport.paidSales)}</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-label">Pending Sales</span>
+                  <span className="stat-number">{formatMoney(salesReport.pendingSales)}</span>
+                </div>
+              </div>
+
+              <div className="table-wrapper">
+                <table className="invoices-table">
+                  <thead>
+                    <tr>
+                      <th>Invoice</th>
+                      <th>Customer</th>
+                      <th>Date</th>
+                      <th>Status</th>
+                      <th style={{ textAlign: 'right' }}>Sale Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {salesReport.filteredInvoices.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} style={{ textAlign: 'center', color: '#a0abc0', padding: '1.5rem' }}>
+                          No sales found for selected range.
+                        </td>
+                      </tr>
+                    ) : (
+                      salesReport.filteredInvoices.map((invoice) => (
+                        <tr key={invoice.invoiceId}>
+                          <td>{invoice.invoiceId}</td>
+                          <td>{invoice.customer}</td>
+                          <td>{formatDateTime(invoice.createdAt)}</td>
+                          <td>
+                            <span className={`status-badge status-${invoice.status.toLowerCase()}`}>
+                              {invoice.status}
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'right' }}>{formatMoney(invoice.amount)}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
           ) : (
             <InventoryEnhanced
               items={inventory}
