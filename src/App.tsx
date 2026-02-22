@@ -7,6 +7,7 @@ import { MonolithicDashboard } from './components/MonolithicDashboard'
 import { InventoryEnhanced } from './components/InventoryEnhanced'
 import { AdminShops } from './components/AdminShops'
 import { ForgotPassword } from './components/ForgotPassword'
+import { ReportsSection } from './components/ReportsSection'
 import './styles/billing-dashboard.css'
 import './styles/dashboard-premium.css'
 
@@ -591,6 +592,8 @@ export default function App() {
               shopGst={shopGst}
               shopEmail={shopEmail}
             />
+          ) : activeTab === 'Reports' ? (
+            <ReportsSection invoices={data.invoices} formatMoney={formatMoney} />
           ) : (
             <InventoryEnhanced
               items={inventory}
