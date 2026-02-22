@@ -13,14 +13,16 @@ public interface InventoryRepository extends JpaRepository<InventoryEntity, Long
 
     @Query("""
             SELECT i FROM InventoryEntity i
-            WHERE lower(i.sku) LIKE lower(concat('%', :query, '%'))
+            WHERE i.shopId = :shopId AND (
+               lower(i.sku) LIKE lower(concat('%', :query, '%'))
                OR lower(i.itemName) LIKE lower(concat('%', :query, '%'))
                OR lower(i.type) LIKE lower(concat('%', :query, '%'))
+            )
             ORDER BY i.updatedAt DESC
             """)
-    List<InventoryEntity> search(String query);
+    List<InventoryEntity> searchByShopId(String shopId, String query);
 
-    List<InventoryEntity> findAllByOrderByUpdatedAtDesc();
+    List<InventoryEntity> findAllByShopIdOrderByUpdatedAtDesc(String shopId);
 
     // New methods for billing
     Optional<InventoryEntity> findBySku(String sku);

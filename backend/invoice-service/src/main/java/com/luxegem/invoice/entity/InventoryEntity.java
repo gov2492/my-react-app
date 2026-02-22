@@ -44,6 +44,9 @@ public class InventoryEntity {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(nullable = false)
+    private String shopId;
+
     public InventoryEntity() {
     }
 
@@ -54,8 +57,7 @@ public class InventoryEntity {
             BigDecimal weightGrams,
             Integer quantity,
             BigDecimal unitPrice,
-            Integer lowStockThreshold
-    ) {
+            Integer lowStockThreshold) {
         this.sku = sku;
         this.itemName = itemName;
         this.type = type;
@@ -105,5 +107,13 @@ public class InventoryEntity {
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public String getShopId() {
+        return shopId;
+    }
+
+    public void setShopId(String shopId) {
+        this.shopId = shopId;
     }
 }

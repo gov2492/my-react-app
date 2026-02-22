@@ -13,13 +13,30 @@ export interface MarketRate {
   changePercent: number
 }
 
+export interface InvoiceItem {
+  description: string
+  type: InvoiceType
+  weight: number
+  rate: number
+  makingChargePercent: number
+  gstRatePercent: number
+}
+
 export interface Invoice {
   invoiceId: string
   customer: string
-  items: string
+  items: InvoiceItem[]
   type: InvoiceType
   amount: number
   status: 'Paid' | 'Pending' | 'Draft'
+  mobilenumber?: string
+  address?: string
+  makingCharge: number
+  gstRate: number
+  discount: number
+  grossAmount: number
+  netAmount: number
+  paymentMethod?: string
 }
 
 export type InvoiceType = 'GOLD_18K' | 'GOLD_22K' | 'GOLD_24K' | 'SILVER' | 'PLATINUM' | 'DIAMOND' | 'OTHER'
@@ -46,10 +63,18 @@ export interface DashboardPayload {
 
 export interface CreateInvoicePayload {
   customer: string
-  items: string
+  items: InvoiceItem[]
   type: InvoiceType
   amount: number
   status: 'Paid' | 'Pending' | 'Draft'
+  mobilenumber?: string
+  address?: string
+  makingCharge: number
+  gstRate: number
+  discount: number
+  grossAmount: number
+  netAmount: number
+  paymentMethod?: string
 }
 
 export interface InventoryItem {

@@ -6,6 +6,10 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.util.Locale;
+import java.util.UUID;
+import java.util.Map;
+
 @Component
 public class AuthDataInitializer implements CommandLineRunner {
 
@@ -19,11 +23,53 @@ public class AuthDataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (!appUserRepository.existsByUsername("admin")) {
-            appUserRepository.save(new AppUser("admin", passwordEncoder.encode("admin123"), "ADMIN"));
+        ensureUser("admin", "gov123singh#", "admin");
+    }
+
+    private void ensureUser(String username, String password, String role) {
+        var existing = appUserRepository.findByUsername(username);
+
+        if (existing.isPresent()) {
+            AppUser user = existing.get();
+            boolean changed = false;
+            if (user.getShopName() == null || user.getShopName().isBlank()) {
+                user.setShopName(defaultShopName(username));
+                changed = true;
+            }
+            if (user.getEmail() == null || user.getEmail().isBlank()) {
+                user.setEmail(username + "@example.com");
+                changed = true;
+            }
+            // Always ensure the admin account password matches the desired default in case
+            // it was created with an old password.
+            if ("admin".equals(username)) {
+                user.setPasswordHash(passwordEncoder.encode(password));
+                changed = true;
+            }
+
+            if (changed) {
+                appUserRepository.save(user);
+            }
+            return;
         }
-        if (!appUserRepository.existsByUsername("user")) {
-            appUserRepository.save(new AppUser("user", passwordEncoder.encode("user123"), "USER"));
-        }
+
+        appUserRepository.save(new AppUser(
+                username,
+                passwordEncoder.encode(password),
+                role,
+                defaultShopName(username),
+                UUID.randomUUID().toString(),
+                username + "@example.com"));
+    }
+
+    private String defaultShopName(String username) {
+        Map<String, String> map = Map.of(
+                "admin", "Akash Jewellers",
+                "akash", "Akash Jewellers",
+                "luxegem", "LuxeGem Premium",
+                "royal", "Royal Gold Palace",
+                "shree", "Shree Diamond Era");
+        String key = username.toLowerCase(Locale.ROOT);
+        return map.getOrDefault(key, username + " Jewellers");
     }
 }

@@ -49,7 +49,7 @@ public class DashboardController {
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public DashboardResponse overview(
-            @Parameter(description = "JWT Bearer token for authentication", required = true, example = "Bearer eyJhbGciOiJIUzI1NiIs...")
+            @Parameter(description = "JWT Bearer token for authentication", required = true)
             @RequestHeader("Authorization") String authorization) {
         logger.debug("Dashboard overview requested with Authorization header");
         if (authorization == null || authorization.isEmpty()) {
@@ -70,7 +70,7 @@ public class DashboardController {
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public InvoiceResponse createInvoice(
-            @Parameter(description = "JWT Bearer token for authentication", required = true, example = "Bearer eyJhbGciOiJIUzI1NiIs...")
+            @Parameter(description = "JWT Bearer token for authentication", required = true)
             @RequestHeader("Authorization") String authorization,
             @Parameter(description = "Invoice creation request data", required = true)
             @Valid @RequestBody CreateInvoiceRequest request
@@ -88,7 +88,7 @@ public class DashboardController {
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public List<InventoryResponse> listInventory(
-            @Parameter(description = "JWT Bearer token for authentication", required = true, example = "Bearer eyJhbGciOiJIUzI1NiIs...")
+            @Parameter(description = "JWT Bearer token for authentication", required = true)
             @RequestHeader("Authorization") String authorization,
             @Parameter(description = "Search query to filter inventory items", required = false)
             @RequestParam(required = false) String q
@@ -107,7 +107,7 @@ public class DashboardController {
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public InventoryResponse createInventory(
-            @Parameter(description = "JWT Bearer token for authentication", required = true, example = "Bearer eyJhbGciOiJIUzI1NiIs...")
+            @Parameter(description = "JWT Bearer token for authentication", required = true)
             @RequestHeader("Authorization") String authorization,
             @Parameter(description = "Inventory creation request data", required = true)
             @Valid @RequestBody CreateInventoryRequest request
@@ -116,4 +116,3 @@ public class DashboardController {
         return dashboardAggregationService.createInventory(authorization, request);
     }
 }
-

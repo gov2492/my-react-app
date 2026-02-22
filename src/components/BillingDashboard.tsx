@@ -312,7 +312,7 @@ export function BillingDashboard({ data, formatMoney, onCreateInvoice }: Billing
                         <span className="type-badge">{invoice.type}</span>
                       </td>
                       <td>
-                        <span className="items-text">{invoice.items}</span>
+                        <span className="items-text">{invoice.items.length} Product(s)</span>
                       </td>
                       <td>
                         <span className="amount-value">{formatMoney(invoice.amount)}</span>

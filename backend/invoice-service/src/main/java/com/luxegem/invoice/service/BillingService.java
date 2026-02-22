@@ -5,6 +5,7 @@ import com.luxegem.invoice.entity.InventoryEntity;
 import com.luxegem.invoice.model.CreateDetailedInvoiceRequest;
 import com.luxegem.invoice.model.InvoiceDetailedResponse;
 import com.luxegem.invoice.model.InvoiceItemDetail;
+import com.luxegem.invoice.model.InvoiceItemDto;
 import com.luxegem.invoice.model.InventoryItemResponse;
 import com.luxegem.invoice.repository.InventoryRepository;
 import com.luxegem.invoice.repository.InvoiceRepository;
@@ -52,8 +53,8 @@ public class BillingService {
                         item.getWeightGrams().doubleValue(),
                         request.quantities().getOrDefault(sku, 1),
                         item.getUnitPrice().doubleValue(),
-                        item.getUnitPrice().multiply(BigDecimal.valueOf(request.quantities().getOrDefault(sku, 1))).doubleValue()
-                );
+                        item.getUnitPrice().multiply(BigDecimal.valueOf(request.quantities().getOrDefault(sku, 1)))
+                                .doubleValue());
                 itemDetails.add(detail);
                 totalAmount = totalAmount.add(BigDecimal.valueOf(detail.lineTotal()));
             } else {
@@ -65,18 +66,17 @@ public class BillingService {
         String generatedInvoiceId = generateInvoiceId();
 
         // Convert items to JSON for storage
-        String itemsJson = convertItemsToJson(itemDetails);
+        List<InvoiceItemDto> itemDtos = convertToDtos(itemDetails);
 
         // Create and save invoice entity
         InvoiceEntity invoiceEntity = new InvoiceEntity(
                 generatedInvoiceId,
                 request.customer(),
-                itemsJson,
+                itemDtos,
                 request.type(),
                 totalAmount,
                 "Pending",
-                LocalDate.now()
-        );
+                LocalDate.now());
 
         InvoiceEntity savedInvoice = invoiceRepository.save(invoiceEntity);
         logger.info("Invoice created successfully: {}", generatedInvoiceId);
@@ -90,8 +90,7 @@ public class BillingService {
                 totalAmount.doubleValue(),
                 "Pending",
                 LocalDate.now().toString(),
-                calculateTaxAndTotal(totalAmount.doubleValue())
-        );
+                calculateTaxAndTotal(totalAmount.doubleValue()));
     }
 
     /**
@@ -104,7 +103,7 @@ public class BillingService {
                 .orElseThrow(() -> new RuntimeException("Invoice not found: " + invoiceId));
 
         // Parse items from JSON
-        List<InvoiceItemDetail> itemDetails = parseItemsFromJson(invoice.getItems());
+        List<InvoiceItemDetail> itemDetails = convertToDetails(invoice.getItems());
         BigDecimal totalAmount = invoice.getAmount();
 
         return new InvoiceDetailedResponse(
@@ -115,8 +114,7 @@ public class BillingService {
                 totalAmount.doubleValue(),
                 invoice.getStatus(),
                 invoice.getIssueDate().toString(),
-                calculateTaxAndTotal(totalAmount.doubleValue())
-        );
+                calculateTaxAndTotal(totalAmount.doubleValue()));
     }
 
     /**
@@ -132,8 +130,7 @@ public class BillingService {
                         item.getWeightGrams().doubleValue(),
                         item.getQuantity(),
                         item.getUnitPrice().doubleValue(),
-                        item.getLowStockThreshold()
-                ))
+                        item.getLowStockThreshold()))
                 .toList();
     }
 
@@ -150,8 +147,7 @@ public class BillingService {
                         item.getWeightGrams().doubleValue(),
                         item.getQuantity(),
                         item.getUnitPrice().doubleValue(),
-                        item.getLowStockThreshold()
-                ))
+                        item.getLowStockThreshold()))
                 .toList();
     }
 
@@ -169,8 +165,7 @@ public class BillingService {
                         item.getWeightGrams().doubleValue(),
                         item.getQuantity(),
                         item.getUnitPrice().doubleValue(),
-                        item.getLowStockThreshold()
-                ))
+                        item.getLowStockThreshold()))
                 .toList();
     }
 
@@ -183,33 +178,23 @@ public class BillingService {
         return "#INV-" + (lastId + 1);
     }
 
-    private String convertItemsToJson(List<InvoiceItemDetail> items) {
-        // Simple JSON conversion - can be replaced with Jackson
-        StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < items.size(); i++) {
-            InvoiceItemDetail item = items.get(i);
-            sb.append(String.format("{\"sku\":\"%s\",\"name\":\"%s\",\"type\":\"%s\",\"weight\":%.3f,\"qty\":%d,\"price\":%.2f}",
-                    item.sku(), item.itemName(), item.type(), item.weightGrams(), item.quantity(), item.unitPrice()));
-            if (i < items.size() - 1) sb.append(",");
-        }
-        sb.append("]");
-        return sb.toString();
+    private List<InvoiceItemDto> convertToDtos(List<InvoiceItemDetail> items) {
+        if (items == null)
+            return new ArrayList<>();
+        return items.stream()
+                .map(item -> new InvoiceItemDto(item.itemName(), item.type(), item.weightGrams(), item.unitPrice(), 0.0,
+                        0.0))
+                .toList();
     }
 
-    private List<InvoiceItemDetail> parseItemsFromJson(String itemsJson) {
-        // Parse JSON back to items - can be improved with Jackson
-        List<InvoiceItemDetail> items = new ArrayList<>();
-        try {
-            // Basic parsing - replace with Jackson for production
-            String[] itemStrings = itemsJson.substring(1, itemsJson.length() - 1).split("},");
-            for (String itemStr : itemStrings) {
-                // Extract values (simplified)
-                items.add(new InvoiceItemDetail("SKU", "Item", "Type", 0, 1, 0, 0));
-            }
-        } catch (Exception e) {
-            logger.error("Error parsing items JSON: {}", e.getMessage());
-        }
-        return items;
+    private List<InvoiceItemDetail> convertToDetails(List<InvoiceItemDto> items) {
+        if (items == null)
+            return new ArrayList<>();
+        return items.stream()
+                .map(item -> new InvoiceItemDetail("N/A", item.description(), item.type(),
+                        item.weight() == null ? 0.0 : item.weight(), 1, item.rate() == null ? 0.0 : item.rate(),
+                        (item.weight() == null ? 0.0 : item.weight()) * (item.rate() == null ? 0.0 : item.rate())))
+                .toList();
     }
 
     private Map<String, Object> calculateTaxAndTotal(double subtotal) {
@@ -221,7 +206,6 @@ public class BillingService {
                 "subtotal", subtotal,
                 "taxRate", taxRate * 100,
                 "taxAmount", taxAmount,
-                "total", total
-        );
+                "total", total);
     }
 }

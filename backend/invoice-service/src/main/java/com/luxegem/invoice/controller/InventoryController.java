@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/inventory")
@@ -28,30 +29,33 @@ public class InventoryController {
     }
 
     @GetMapping
-    public List<InventoryResponse> listInventory(@RequestParam(required = false) String q) {
+    public List<InventoryResponse> listInventory(@RequestParam(required = false) String q, Principal principal) {
+        String shopId = principal != null ? principal.getName() : "admin";
         List<InventoryEntity> items = (q == null || q.isBlank())
-                ? inventoryRepository.findAllByOrderByUpdatedAtDesc()
-                : inventoryRepository.search(q.trim());
+                ? inventoryRepository.findAllByShopIdOrderByUpdatedAtDesc(shopId)
+                : inventoryRepository.searchByShopId(shopId, q.trim());
 
         return items.stream().map(this::toResponse).toList();
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public InventoryResponse createInventory(@Valid @RequestBody CreateInventoryRequest request) {
+    public InventoryResponse createInventory(@Valid @RequestBody CreateInventoryRequest request, Principal principal) {
+        String shopId = principal != null ? principal.getName() : "admin";
         String sku = (request.sku() == null || request.sku().isBlank())
                 ? generateSku()
                 : request.sku().trim().toUpperCase();
 
-        InventoryEntity saved = inventoryRepository.save(new InventoryEntity(
+        InventoryEntity entity = new InventoryEntity(
                 sku,
                 request.itemName(),
                 request.type(),
                 BigDecimal.valueOf(request.weightGrams()),
                 request.quantity(),
                 BigDecimal.valueOf(request.unitPrice()),
-                request.lowStockThreshold()
-        ));
+                request.lowStockThreshold());
+        entity.setShopId(shopId);
+        InventoryEntity saved = inventoryRepository.save(entity);
 
         return toResponse(saved);
     }
@@ -72,7 +76,6 @@ public class InventoryController {
                 entity.getQuantity(),
                 entity.getUnitPrice().doubleValue(),
                 entity.getLowStockThreshold(),
-                entity.getUpdatedAt().toString()
-        );
+                entity.getUpdatedAt().toString());
     }
 }

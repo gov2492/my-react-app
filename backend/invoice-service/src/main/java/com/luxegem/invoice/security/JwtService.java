@@ -21,6 +21,14 @@ public class JwtService {
         return extractClaims(token).getSubject();
     }
 
+    public String extractShopId(String token) {
+        return extractClaims(token).get("shopId", String.class);
+    }
+
+    public String extractRole(String token) {
+        return extractClaims(token).get("role", String.class);
+    }
+
     public boolean isTokenValid(String token) {
         return extractClaims(token).getExpiration().getTime() > System.currentTimeMillis();
     }

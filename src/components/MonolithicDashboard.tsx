@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import type { DashboardPayload, InvoiceType, Invoice } from '../types/dashboard'
 import '../styles/jewellery-dashboard.css'
 
@@ -7,19 +7,42 @@ interface MonolithicDashboardProps {
   formatMoney: (value: number, currency?: 'INR' | 'USD') => string
   formatInvoiceType: (type: InvoiceType | string) => string
   onCreateInvoice: () => void
+  jewellerName: string
+  shopAddress: string
+  shopContact: string
+  shopGst: string
+  shopEmail: string
 }
 
 export function MonolithicDashboard({
   data,
   formatMoney,
   formatInvoiceType,
-  onCreateInvoice
+  onCreateInvoice,
+  jewellerName,
+  shopAddress,
+  shopContact,
+  shopGst,
+  shopEmail
 }: MonolithicDashboardProps) {
   const [activeView, setActiveView] = useState<'dashboard' | 'invoices' | 'allInvoices' | 'customers'>('dashboard')
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'All' | 'Paid' | 'Pending' | 'Draft'>('All')
   const [viewingInvoiceTemplate, setViewingInvoiceTemplate] = useState<Invoice | null>(null)
+
+  useEffect(() => {
+    const handleOpenPreview = (e: any) => {
+      const createdId = e.detail;
+      const invoice = data.invoices.find(inv => inv.invoiceId === createdId);
+      if (invoice) {
+        setViewingInvoiceTemplate(invoice);
+        setTimeout(() => window.print(), 300);
+      }
+    };
+    window.addEventListener('openInvoicePreview', handleOpenPreview);
+    return () => window.removeEventListener('openInvoicePreview', handleOpenPreview);
+  }, [data.invoices]);
 
   const billingStats = useMemo(() => {
     const invoices = data.invoices
@@ -46,7 +69,7 @@ export function MonolithicDashboard({
       filtered = filtered.filter((inv) => inv.status === statusFilter)
     }
 
-    return filtered.filter(inv => 
+    return filtered.filter(inv =>
       inv.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
       inv.invoiceId.toLowerCase().includes(searchTerm.toLowerCase())
     )
@@ -70,7 +93,7 @@ export function MonolithicDashboard({
       <div className="dashboard-header">
         <div className="header-top">
           <div className="header-title">
-            <h1>💎 Akash Jewellers</h1>
+            <h1>💎 {jewellerName}</h1>
             <p>Premium Gold, Platinum & Silver Shop</p>
           </div>
           <button className="btn-create-invoice" onClick={onCreateInvoice}>
@@ -80,25 +103,25 @@ export function MonolithicDashboard({
 
         {/* Navigation */}
         <div className="nav-tabs">
-          <button 
+          <button
             className={`nav-tab ${activeView === 'dashboard' ? 'active' : ''}`}
             onClick={() => setActiveView('dashboard')}
           >
             📊 Dashboard
           </button>
-          <button 
+          <button
             className={`nav-tab ${activeView === 'invoices' ? 'active' : ''}`}
             onClick={() => setActiveView('invoices')}
           >
             📋 Invoices ({data.invoices.length})
           </button>
-          <button 
+          <button
             className={`nav-tab ${activeView === 'allInvoices' ? 'active' : ''}`}
             onClick={() => setActiveView('allInvoices')}
           >
             📑 All Invoices ({data.invoices.length})
           </button>
-          <button 
+          <button
             className={`nav-tab ${activeView === 'customers' ? 'active' : ''}`}
             onClick={() => setActiveView('customers')}
           >
@@ -204,7 +227,7 @@ export function MonolithicDashboard({
               onChange={(e) => setSearchTerm(e.target.value)}
               className="search-input"
             />
-            <select 
+            <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
               className="filter-select"
@@ -221,7 +244,7 @@ export function MonolithicDashboard({
               <button className="btn-back" onClick={() => setSelectedInvoice(null)}>
                 ← Back
               </button>
-              
+
               <div className="invoice-detail-card">
                 <div className="invoice-header-detail">
                   <h2>Invoice #{selectedInvoice.invoiceId}</h2>
@@ -239,9 +262,31 @@ export function MonolithicDashboard({
                     <label>Metal Type</label>
                     <p>{formatInvoiceType(selectedInvoice.type)}</p>
                   </div>
-                  <div className="detail-item">
+                  <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
                     <label>Items</label>
-                    <p>{selectedInvoice.items}</p>
+                    <div className="items-table" style={{ marginTop: '0.5rem' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'var(--bg-primary)', borderRadius: '8px', overflow: 'hidden' }}>
+                        <thead style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                          <tr>
+                            <th style={{ padding: '0.8rem', textAlign: 'left', fontSize: '0.85rem' }}>Description</th>
+                            <th style={{ padding: '0.8rem', textAlign: 'left', fontSize: '0.85rem' }}>Details</th>
+                            <th style={{ padding: '0.8rem', textAlign: 'right', fontSize: '0.85rem' }}>Weight</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedInvoice.items.map((item, idx) => (
+                            <tr key={idx} style={{ borderTop: '1px solid var(--border-color)' }}>
+                              <td style={{ padding: '0.8rem', fontSize: '0.9rem', fontWeight: 500 }}>{item.description}</td>
+                              <td style={{ padding: '0.8rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                ₹{item.rate}/g • {item.type}<br />
+                                <span style={{ fontSize: '0.75rem' }}>MC: {item.makingChargePercent}% | GST: {item.gstRatePercent}%</span>
+                              </td>
+                              <td style={{ padding: '0.8rem', textAlign: 'right', fontWeight: 600, color: 'var(--primary-color)' }}>{item.weight}g</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                   <div className="detail-item">
                     <label>Amount</label>
@@ -250,7 +295,7 @@ export function MonolithicDashboard({
                 </div>
 
                 <div className="action-buttons">
-                  <button 
+                  <button
                     className="btn-secondary"
                     onClick={() => setViewingInvoiceTemplate(selectedInvoice)}
                   >
@@ -353,7 +398,15 @@ export function MonolithicDashboard({
                             {formatInvoiceType(invoice.type)}
                           </span>
                         </td>
-                        <td>{invoice.items}</td>
+                        <td>
+                          <div style={{ maxHeight: '60px', overflowY: 'auto', fontSize: '0.85rem', maxWidth: '300px' }}>
+                            {invoice.items.map((item, idx) => (
+                              <div key={idx} style={{ whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                                <strong>{item.weight}g</strong> {item.description}
+                              </div>
+                            ))}
+                          </div>
+                        </td>
                         <td className="amount-cell">
                           {formatMoney(invoice.amount)}
                         </td>
@@ -427,117 +480,155 @@ export function MonolithicDashboard({
         </div>
       )}
 
-    {/* ===== BEAUTIFUL INVOICE TEMPLATE ===== */}
-    {viewingInvoiceTemplate && (
-      <div className="invoice-template-overlay">
-        <div className="invoice-template-container">
-          <div className="invoice-template-header-controls">
-            <button className="btn-close-template" onClick={() => setViewingInvoiceTemplate(null)}>✕ Close</button>
-            <button className="btn-print-template" onClick={printInvoice}>🖨️ Print</button>
-          </div>
-
-          <div className="invoice-template">
-            {/* Header Section */}
-            <div className="invoice-header-section">
-              <div className="company-branding">
-                <h1>💎 AKASH JEWELLERS</h1>
-                <p className="subtitle">Premium Gold, Platinum & Silver Shop</p>
-              </div>
-              <div className="company-contact">
-                <p>📱 +91-XXXXXXXXXX</p>
-                <p>✉️ info@akashjewellers.com</p>
-                <p>📍 Address, City, State</p>
-              </div>
+      {/* ===== BEAUTIFUL INVOICE TEMPLATE ===== */}
+      {viewingInvoiceTemplate && (
+        <div className="invoice-template-overlay">
+          <div className="invoice-template-container">
+            <div className="invoice-template-header-controls">
+              <button className="btn-close-template" onClick={() => setViewingInvoiceTemplate(null)}>✕ Close</button>
+              <button className="btn-print-template" onClick={printInvoice}>🖨️ Print</button>
             </div>
 
-            {/* Invoice Title */}
-            <div className="invoice-title-section">
-              <h2>INVOICE</h2>
-              <div className={`invoice-status-badge status-${viewingInvoiceTemplate!.status.toLowerCase()}`}>
-                {viewingInvoiceTemplate!.status}
-              </div>
-            </div>
-
-            {/* Invoice Info Grid */}
-            <div className="invoice-info-grid">
-              <div className="info-box">
-                <label>Invoice Number</label>
-                <p>{viewingInvoiceTemplate!.invoiceId}</p>
-              </div>
-              <div className="info-box">
-                <label>Invoice Date</label>
-                <p>{new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-              </div>
-              <div className="info-box">
-                <label>GST Number</label>
-                <p>27XXXXXXXXXXXXXX01</p>
-              </div>
-            </div>
-
-            {/* Customer Details */}
-            <div className="customer-section">
-              <h3>Customer Details</h3>
-              <div className="detail-grid">
-                <div>
-                  <strong>Name:</strong> {viewingInvoiceTemplate!.customer}
+            <div className="invoice-template">
+              {/* Header Section */}
+              <div className="invoice-header-section">
+                <div className="company-branding">
+                  <h1>💎 {jewellerName.toUpperCase()}</h1>
+                  <p className="subtitle">Premium Gold, Platinum & Silver Shop</p>
                 </div>
-                <div>
-                  <strong>Metal Type:</strong> {viewingInvoiceTemplate!.type}
-                </div>
-                <div>
-                  <strong>Items:</strong> {viewingInvoiceTemplate!.items}
+                <div className="company-contact">
+                  <p>📱 {shopContact || '+91-XXXXXXXXXX'}</p>
+                  <p>✉️ {shopEmail || (data.invoices.length > 0 ? `info@${jewellerName.toLowerCase().replace(/\s+/g, '')}.com` : 'info@luxegem.local')}</p>
+                  <p>📍 {shopAddress || 'Address, City, State'}</p>
                 </div>
               </div>
-            </div>
 
-            {/* Amount Section */}
-            <div className="amount-section">
-              <div className="amount-box">
-                <div className="amount-label">Subtotal</div>
-                <div className="amount-value">{formatMoney(viewingInvoiceTemplate!.amount * 0.88)}</div>
+              {/* Invoice Title */}
+              <div className="invoice-title-section">
+                <h2>INVOICE</h2>
+                <div className={`invoice-status-badge status-${viewingInvoiceTemplate!.status.toLowerCase()}`}>
+                  {viewingInvoiceTemplate!.status}
+                </div>
               </div>
-              <div className="amount-box highlight">
-                <div className="amount-label">GST (12%)</div>
-                <div className="amount-value">{formatMoney(viewingInvoiceTemplate!.amount * 0.12)}</div>
-              </div>
-              <div className="amount-box total">
-                <div className="amount-label">Total Amount</div>
-                <div className="amount-value-large">{formatMoney(viewingInvoiceTemplate!.amount)}</div>
-              </div>
-            </div>
 
-            {/* Payment Status */}
-            <div className="payment-section">
-              <div className="payment-status">
-                <strong>Payment Status:</strong> {viewingInvoiceTemplate!.status}
+              {/* Invoice Info Grid */}
+              <div className="invoice-info-grid">
+                <div className="info-box">
+                  <label>Invoice Number</label>
+                  <p>{viewingInvoiceTemplate!.invoiceId}</p>
+                </div>
+                <div className="info-box">
+                  <label>Invoice Date</label>
+                  <p>{new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                </div>
+                <div className="info-box">
+                  <label>GST Number</label>
+                  <p>{shopGst || '27XXXXXXXXXXXXXX01'}</p>
+                </div>
               </div>
-            </div>
 
-            {/* Terms & Conditions */}
-            <div className="terms-section">
-              <h4>Terms & Conditions</h4>
-              <ul>
-                <li>Items are sold as per description provided</li>
-                <li>No returns or refunds accepted after 7 days</li>
-                <li>All prices are inclusive of GST</li>
-                <li>Payment method as per invoice status</li>
-                <li>Please keep this invoice for warranty purposes</li>
-              </ul>
-            </div>
-
-            {/* Footer */}
-            <div className="invoice-footer">
-              <div className="signature-section">
-                <div className="signature-line"></div>
-                <p>Authorized Signatory</p>
+              {/* Customer Details */}
+              <div className="customer-section">
+                <h3>Customer Details</h3>
+                <div className="detail-grid">
+                  <div>
+                    <strong>Name:</strong> {viewingInvoiceTemplate!.customer}
+                  </div>
+                  <div>
+                    <strong>Mobile Number:</strong> {viewingInvoiceTemplate!.mobilenumber || 'N/A'}
+                  </div>
+                  <div>
+                    <strong>Address:</strong> {viewingInvoiceTemplate!.address || 'N/A'}
+                  </div>
+                </div>
               </div>
-              <p className="footer-text">Thank you for choosing Akash Jewellers! 🙏</p>
-              <p className="generated-date">Generated on {new Date().toLocaleString('en-IN')}</p>
+
+              {/* Items Table Section */}
+              <div className="invoice-items-section" style={{ marginTop: '2rem' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', borderBottom: '2px solid var(--border-color)', fontSize: '0.9rem' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>
+                      <th style={{ padding: '0.75rem' }}>S.No</th>
+                      <th style={{ padding: '0.75rem' }}>Description</th>
+                      <th style={{ padding: '0.75rem' }}>Type</th>
+                      <th style={{ padding: '0.75rem' }}>Weight (g)</th>
+                      <th style={{ padding: '0.75rem' }}>Rate (₹/g)</th>
+                      <th style={{ padding: '0.75rem' }}>MC (%)</th>
+                      <th style={{ padding: '0.75rem' }}>GST (%)</th>
+                      <th style={{ padding: '0.75rem', textAlign: 'right' }}>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {viewingInvoiceTemplate!.items.map((item, idx) => {
+                      const base = item.weight * item.rate;
+                      const mc = base * (item.makingChargePercent / 100);
+                      const gst = (base + mc) * (item.gstRatePercent / 100);
+                      const total = base + mc + gst;
+
+                      return (
+                        <tr key={idx} style={{ borderBottom: '1px solid var(--border-color-light)' }}>
+                          <td style={{ padding: '0.75rem' }}>{idx + 1}</td>
+                          <td style={{ padding: '0.75rem', fontWeight: 500 }}>{item.description}</td>
+                          <td style={{ padding: '0.75rem' }}>{item.type}</td>
+                          <td style={{ padding: '0.75rem' }}>{item.weight.toFixed(3)}</td>
+                          <td style={{ padding: '0.75rem' }}>₹{item.rate.toFixed(2)}</td>
+                          <td style={{ padding: '0.75rem' }}>{item.makingChargePercent}%</td>
+                          <td style={{ padding: '0.75rem' }}>{item.gstRatePercent}%</td>
+                          <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: 600 }}>{formatMoney(total)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Amount Section */}
+              <div className="amount-section">
+                <div className="amount-box highlight">
+                  <div className="amount-label">Subtotal</div>
+                  <div className="amount-value">{formatMoney(viewingInvoiceTemplate!.grossAmount)}</div>
+                </div>
+                <div className="amount-box total">
+                  <div className="amount-label">Total Amount</div>
+                  <div className="amount-value-large">{formatMoney(viewingInvoiceTemplate!.amount)}</div>
+                </div>
+              </div>
+
+              {/* Payment Info */}
+              <div className="payment-section">
+                <div className="payment-status">
+                  <strong>Payment Status:</strong> {viewingInvoiceTemplate!.status}
+                </div>
+                <div className="payment-method">
+                  <strong>Payment Method:</strong> {viewingInvoiceTemplate!.paymentMethod || 'Cash'}
+                </div>
+              </div>
+
+              {/* Terms & Conditions */}
+              <div className="terms-section">
+                <h4>Terms & Conditions</h4>
+                <ul>
+                  <li>Items are sold as per description provided</li>
+                  <li>No returns or refunds accepted after 7 days</li>
+                  <li>All prices are inclusive of GST</li>
+                  <li>Payment method as per invoice status</li>
+                  <li>Please keep this invoice for warranty purposes</li>
+                </ul>
+              </div>
+
+              {/* Footer */}
+              <div className="invoice-footer">
+                <div className="signature-section">
+                  <div className="signature-line"></div>
+                  <p>Authorized Signatory</p>
+                </div>
+                <p className="footer-text">Thank you for choosing {jewellerName}! 🙏</p>
+                <p className="generated-date">Generated on {new Date().toLocaleString('en-IN')}</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
     </div>
   )
 }

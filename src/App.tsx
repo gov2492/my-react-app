@@ -5,6 +5,8 @@ import { createInventory, createInvoice, fetchDashboard, fetchInventory } from '
 import type { CreateInventoryPayload, CreateInvoicePayload, DashboardPayload, InventoryItem, InvoiceType } from './types/dashboard'
 import { MonolithicDashboard } from './components/MonolithicDashboard'
 import { InventoryEnhanced } from './components/InventoryEnhanced'
+import { AdminShops } from './components/AdminShops'
+import { ForgotPassword } from './components/ForgotPassword'
 import './styles/billing-dashboard.css'
 import './styles/dashboard-premium.css'
 
@@ -40,16 +42,23 @@ function formatMoney(value: number, currency: 'INR' | 'USD' = 'INR'): string {
   }
   return inrFormatter.format(value)
 }
-/* Utility function removed - kept for reference
-// Previously used but now unused - consider removing if no future use
-*/
+
+
 
 const defaultInvoiceForm: CreateInvoicePayload = {
   customer: '',
-  items: '',
+  mobilenumber: '',
+  address: '',
+  items: [],
   type: 'GOLD_22K',
   amount: 0,
-  status: 'Pending'
+  status: 'Pending',
+  makingCharge: 0,
+  gstRate: 0.03,
+  discount: 0,
+  grossAmount: 0,
+  netAmount: 0,
+  paymentMethod: 'Cash'
 }
 
 const defaultInventoryForm: CreateInventoryPayload = {
@@ -89,10 +98,19 @@ function formatDateTime(value: string): string {
 export default function App() {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('luxegem_token'))
   const [loggedInUsername, setLoggedInUsername] = useState<string>(() => localStorage.getItem('luxegem_username') || 'admin')
+  const [jewellerName, setJewellerName] = useState<string>(() => localStorage.getItem('luxegem_jeweller_name') || 'Jewellery Dashboard')
+  const [userRole, setUserRole] = useState<string>(() => localStorage.getItem('luxegem_role') || 'shop')
+  const [shopLogo, setShopLogo] = useState<string>(() => localStorage.getItem('luxegem_logo') || '')
+  const [shopAddress, setShopAddress] = useState<string>(() => localStorage.getItem('luxegem_shop_address') || '')
+  const [shopContact, setShopContact] = useState<string>(() => localStorage.getItem('luxegem_shop_contact') || '')
+  const [shopGst, setShopGst] = useState<string>(() => localStorage.getItem('luxegem_shop_gst') || '')
+  const [shopEmail, setShopEmail] = useState<string>(() => localStorage.getItem('luxegem_email') || '')
   const [username, setUsername] = useState('admin')
   const [password, setPassword] = useState('admin123')
   const [authError, setAuthError] = useState<string | null>(null)
   const [loggingIn, setLoggingIn] = useState(false)
+
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
 
   const [activeTab, setActiveTab] = useState('Dashboard')
   const [searchQuery, setSearchQuery] = useState('')
@@ -102,6 +120,7 @@ export default function App() {
   const [savingInvoice, setSavingInvoice] = useState(false)
   const [savingInventory, setSavingInventory] = useState(false)
   const [invoiceForm, setInvoiceForm] = useState<CreateInvoicePayload>(defaultInvoiceForm)
+  const [invoiceItems, setInvoiceItems] = useState<{ description: string; type: InvoiceType; weight: string | ''; rate: string | ''; makingChargePercent: string | ''; gstRatePercent: string | '' }[]>([{ description: '', type: 'GOLD_22K', weight: '', rate: '', makingChargePercent: '8', gstRatePercent: '3' }])
   const [inventoryForm, setInventoryForm] = useState<CreateInventoryPayload>(defaultInventoryForm)
 
   const [data, setData] = useState<DashboardPayload | null>(null)
@@ -173,10 +192,46 @@ export default function App() {
 
     try {
       const auth = await login(username, password)
+      const resolvedShopName = auth.shopName?.trim() ? auth.shopName : 'Jewellery Dashboard'
       localStorage.setItem('luxegem_token', auth.token)
       localStorage.setItem('luxegem_username', username)
+      localStorage.setItem('luxegem_jeweller_name', resolvedShopName)
+      localStorage.setItem('luxegem_role', auth.role || 'shop')
+      if (auth.email) {
+        localStorage.setItem('luxegem_email', auth.email)
+      } else {
+        localStorage.removeItem('luxegem_email')
+      }
+      if (auth.logoUrl) {
+        localStorage.setItem('luxegem_logo', auth.logoUrl)
+      } else {
+        localStorage.removeItem('luxegem_logo')
+      }
+      if (auth.address) {
+        localStorage.setItem('luxegem_shop_address', auth.address)
+      } else {
+        localStorage.removeItem('luxegem_shop_address')
+      }
+      if (auth.contactNumber) {
+        localStorage.setItem('luxegem_shop_contact', auth.contactNumber)
+      } else {
+        localStorage.removeItem('luxegem_shop_contact')
+      }
+      if (auth.gstNumber) {
+        localStorage.setItem('luxegem_shop_gst', auth.gstNumber)
+      } else {
+        localStorage.removeItem('luxegem_shop_gst')
+      }
+
       setToken(auth.token)
       setLoggedInUsername(username)
+      setJewellerName(resolvedShopName)
+      setUserRole(auth.role || 'shop')
+      setShopLogo(auth.logoUrl || '')
+      setShopAddress(auth.address || '')
+      setShopContact(auth.contactNumber || '')
+      setShopGst(auth.gstNumber || '')
+      setShopEmail(auth.email || '')
     } catch (err) {
       setAuthError(err instanceof Error ? err.message : 'Login failed')
     } finally {
@@ -194,10 +249,57 @@ export default function App() {
     setCreateError(null)
 
     try {
-      await createInvoice(token, invoiceForm)
+      const totalBaseItems = invoiceItems.reduce((acc, item) => acc + ((Number(item.weight) || 0) * (Number(item.rate) || 0)), 0);
+      const totalMakingCharge = invoiceItems.reduce((acc, item) => {
+        const base = (Number(item.weight) || 0) * (Number(item.rate) || 0);
+        const mcPercent = Number(item.makingChargePercent) || 0;
+        return acc + (base * (mcPercent / 100));
+      }, 0);
+      const totalGstAmount = invoiceItems.reduce((acc, item) => {
+        const base = (Number(item.weight) || 0) * (Number(item.rate) || 0);
+        const mc = base * ((Number(item.makingChargePercent) || 0) / 100);
+        const gstPercent = Number(item.gstRatePercent) || 0;
+        return acc + ((base + mc) * (gstPercent / 100));
+      }, 0);
+
+      const overallBase = totalBaseItems + totalMakingCharge;
+      const netAmountAmount = overallBase + totalGstAmount;
+
+      const itemsPayload = invoiceItems
+        .filter(i => i.description.trim())
+        .map(i => ({
+          description: i.description,
+          type: i.type,
+          weight: Number(i.weight) || 0,
+          rate: Number(i.rate) || 0,
+          makingChargePercent: Number(i.makingChargePercent) || 0,
+          gstRatePercent: Number(i.gstRatePercent) || 0
+        }));
+
+
+      const invoicePayload = {
+        ...invoiceForm,
+        items: itemsPayload.length > 0 ? itemsPayload : [],
+        grossAmount: overallBase,
+        netAmount: netAmountAmount,
+        amount: netAmountAmount,
+        gstRate: 0,
+        makingCharge: totalMakingCharge,
+        discount: 0
+      };
+
+      const createdInvoice = await createInvoice(token, invoicePayload)
       await loadDashboard(token)
       setShowCreateModal(false)
       setInvoiceForm(defaultInvoiceForm)
+      setInvoiceItems([{ description: '', type: 'GOLD_22K', weight: '', rate: '', makingChargePercent: '8', gstRatePercent: '3' }])
+
+      // Auto-open print view for the new invoice. Delay allows new state to mount.
+      if (createdInvoice && createdInvoice.invoiceId) {
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('openInvoicePreview', { detail: createdInvoice.invoiceId }));
+        }, 500);
+      }
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : 'Failed to create invoice')
     } finally {
@@ -229,8 +331,22 @@ export default function App() {
   const onLogout = () => {
     localStorage.removeItem('luxegem_token')
     localStorage.removeItem('luxegem_username')
+    localStorage.removeItem('luxegem_jeweller_name')
+    localStorage.removeItem('luxegem_role')
+    localStorage.removeItem('luxegem_email')
+    localStorage.removeItem('luxegem_logo')
+    localStorage.removeItem('luxegem_shop_address')
+    localStorage.removeItem('luxegem_shop_contact')
+    localStorage.removeItem('luxegem_shop_gst')
     setToken(null)
     setLoggedInUsername('admin')
+    setJewellerName('Jewellery Dashboard')
+    setUserRole('shop')
+    setShopLogo('')
+    setShopAddress('')
+    setShopContact('')
+    setShopGst('')
+    setShopEmail('')
   }
 
   if (!token) {
@@ -245,121 +361,132 @@ export default function App() {
           <section className="login-showcase">
             <div className="showcase-content">
               <div className="showcase-badge">
-                <span className="badge-icon">✨</span>
-                AKASH JWELLERS
+                <span className="badge-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#d4af37" stroke="#d4af37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                </span>
+                Luxury Jewellery ERP Suite
               </div>
-              <h1>Crafted Elegance<br/>for Every Occasion</h1>
+              <h1>Complete ERP Solution<br />for Modern Jewellery Businesses</h1>
               <p>
-                Manage inventory, invoices, customers, and live Indian bullion rates in one modern workspace tailored for
-                jewellery retail operations.
+                Streamline billing, inventory, customers, and live bullion rates in one intelligent platform built for jewellery retailers.
               </p>
+
+              <div className="cta-container">
+                <button className="cta-primary">Start Free Trial</button>
+                <button className="cta-secondary">Book Demo</button>
+              </div>
+
               <div className="showcase-stats">
                 <div className="stat-item">
-                  <div className="stat-icon">🏆</div>
-                  <div className="showcase-stat-value">24K Live</div>
-                  <div className="showcase-stat-label">Gold Tracking</div>
+                  <div className="stat-icon" style={{ color: '#d4af37' }}>📈</div>
+                  <div className="showcase-stat-label">Live Gold & Silver Rates</div>
                 </div>
                 <div className="stat-item">
-                  <div className="stat-icon">💎</div>
-                  <div className="showcase-stat-value">INR Ready</div>
-                  <div className="showcase-stat-label">Billing Format</div>
+                  <div className="stat-icon" style={{ color: '#d4af37' }}>🧾</div>
+                  <div className="showcase-stat-label">GST-Ready Smart Billing</div>
                 </div>
                 <div className="stat-item">
-                  <div className="stat-icon">⚡</div>
-                  <div className="showcase-stat-value">Real-time</div>
-                  <div className="showcase-stat-label">Updates</div>
+                  <div className="stat-icon" style={{ color: '#d4af37' }}>📊</div>
+                  <div className="showcase-stat-label">Real-Time Business Insights</div>
                 </div>
               </div>
               <div className="feature-list">
                 <div className="feature-item">
-                  <span className="feature-check">✓</span>
-                  <span>Real-time inventory tracking</span>
+                  <span className="feature-check"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d4af37" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+                  <span>Smart Inventory Control</span>
                 </div>
                 <div className="feature-item">
-                  <span className="feature-check">✓</span>
-                  <span>Multi-metal pricing support</span>
+                  <span className="feature-check"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d4af37" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+                  <span>Multi-Metal Pricing Support</span>
                 </div>
                 <div className="feature-item">
-                  <span className="feature-check">✓</span>
-                  <span>Advanced reporting & analytics</span>
+                  <span className="feature-check"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d4af37" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+                  <span>Advanced Reports & Profit Analytics</span>
                 </div>
               </div>
             </div>
           </section>
 
-          <form className="login-card" onSubmit={onLogin}>
-            <div className="login-header">
-              <h2>Welcome Back</h2>
-              <p>Sign in to continue to your dashboard</p>
+          {showForgotPassword ? (
+            <div style={{ alignSelf: 'center', width: '100%' }}>
+              <ForgotPassword onBack={() => setShowForgotPassword(false)} />
             </div>
-            
-            <div className="form-group">
-              <label htmlFor="username">Username</label>
-              <div className="input-wrapper">
-                <span className="input-icon">👤</span>
-                <input 
-                  id="username"
-                  value={username} 
-                  onChange={(e) => setUsername(e.target.value)} 
-                  placeholder="Enter your username" 
-                  required 
-                />
+          ) : (
+            <form className="login-card" onSubmit={onLogin}>
+              <div className="login-header">
+                <h2>Welcome Back</h2>
+                <p>Sign in to continue to your dashboard</p>
               </div>
-            </div>
 
-            <div className="form-group">
-              <label htmlFor="password">Password</label>
-              <div className="input-wrapper">
-                <span className="input-icon">🔐</span>
-                <input
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  type="password"
-                  required
-                />
+              <div className="form-group">
+                <label htmlFor="username">Username</label>
+                <div className="input-wrapper">
+                  <span className="input-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                  </span>
+                  <input
+                    id="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Enter your username"
+                    required
+                  />
+                </div>
               </div>
-            </div>
 
-            {authError && (
-              <div className="error-message">
-                <span className="error-icon">⚠️</span>
-                {authError}
+              <div className="form-group">
+                <label htmlFor="password">Password</label>
+                <div className="input-wrapper">
+                  <span className="input-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                  </span>
+                  <input
+                    id="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    type="password"
+                    required
+                  />
+                </div>
               </div>
-            )}
 
-            <button className="login-button" type="submit" disabled={loggingIn}>
-              <span className="button-content">
-                {loggingIn ? (
-                  <>
-                    <span className="spinner"></span>
-                    Signing in...
-                  </>
-                ) : (
-                  <>
-                    Sign In
-                    <span className="button-arrow">→</span>
-                  </>
-                )}
-              </span>
-            </button>
+              {authError && (
+                <div className="error-message">
+                  <span className="error-icon">⚠️</span>
+                  {authError}
+                </div>
+              )}
 
-            <div className="login-divider">
-              <span>Demo Account</span>
-            </div>
+              <button className="login-button" type="submit" disabled={loggingIn}>
+                <span className="button-content">
+                  {loggingIn ? (
+                    <>
+                      <span className="spinner"></span>
+                      Signing in...
+                    </>
+                  ) : (
+                    <>
+                      Sign In
+                      <span className="button-arrow">→</span>
+                    </>
+                  )}
+                </span>
+              </button>
 
-            <div className="demo-credentials">
-              <div className="credential">
-                <span className="label">Username:</span>
-                <span className="value">admin</span>
+
+
+              <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(true)}
+                  style={{ background: 'none', border: 'none', color: '#d4af37', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.9rem' }}
+                >
+                  Forgot Password?
+                </button>
               </div>
-              <div className="credential">
-                <span className="label">Password:</span>
-                <span className="value">admin123</span>
-              </div>
-            </div>
-          </form>
+            </form>
+          )}
         </div>
       </div>
     )
@@ -370,7 +497,17 @@ export default function App() {
   }
 
   if (error || !data) {
-    return <div className="status error">{error ?? 'Dashboard failed to load.'}</div>
+    return (
+      <div className="status error" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', paddingTop: '100px' }}>
+        <div>{error ?? 'Dashboard failed to load.'}</div>
+        <button
+          onClick={onLogout}
+          style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #ff4d4f', background: '#ffe6e6', color: '#ff4d4f', cursor: 'pointer' }}
+        >
+          Clear Session & Return to Login
+        </button>
+      </div>
+    )
   }
 
   return (
@@ -378,27 +515,43 @@ export default function App() {
       <div className="layout">
         <aside className="sidebar">
           <div className="brand">
-            <div className="brand-emblem">AJ</div>
-            <div className="brand-name">Akash Jwellers</div>
+            <div className="brand-emblem" style={shopLogo ? { background: 'none', border: 'none', width: '32px', height: '32px' } : {}}>
+              {shopLogo ? (
+                <img src={shopLogo} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3h12l4 6-10 13L2 9Z" /><path d="M11 3 8 9l4 13 4-13-3-6" /><path d="M2 9h20" /></svg>
+              )}
+            </div>
+            <div className="brand-name">{jewellerName}</div>
           </div>
 
           <nav className="nav">
-            {['Dashboard', 'Inventory', 'Billing', 'Customers', 'Reports'].map((tab) => (
+            {[
+              { id: 'Dashboard', icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1" /><rect width="7" height="5" x="14" y="3" rx="1" /><rect width="7" height="9" x="14" y="12" rx="1" /><rect width="7" height="5" x="3" y="16" rx="1" /></svg> },
+              { id: 'Inventory', icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m7.5 4.27 9 5.15" /><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" /></svg> },
+              { id: 'Billing', icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" x2="8" y1="13" y2="13" /><line x1="16" x2="8" y1="17" y2="17" /><polyline points="10 9 9 9 8 9" /></svg> },
+              { id: 'Customers', icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg> },
+              { id: 'Reports', icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" /></svg> },
+              ...((userRole === 'admin' || loggedInUsername === 'admin') ? [{ id: 'Shops', icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> }] : [])
+            ].map((tab) => (
               <button
-                key={tab}
-                className={`nav-item ${activeTab === tab ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab)}
+                key={tab.id}
+                className={`nav-item ${activeTab === tab.id ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab.id as any)}
               >
-                {tab}
+                {tab.icon}
+                {tab.id}
               </button>
             ))}
           </nav>
 
           <div className="system-title">SYSTEM</div>
-          <button className="nav-item" onClick={() => setActiveTab('Settings')}>
+          <button className="nav-item" onClick={() => setActiveTab('Settings' as any)}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
             Settings
           </button>
           <button className="nav-item" onClick={onLogout}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" /></svg>
             Logout
           </button>
 
@@ -406,7 +559,7 @@ export default function App() {
             <div className="avatar">{getInitials(loggedInUsername)}</div>
             <div>
               <div className="profile-name">{loggedInUsername.charAt(0).toUpperCase() + loggedInUsername.slice(1)}</div>
-              <div className="profile-role">Store Manager</div>
+              <div className="profile-role" style={{ fontSize: '0.75rem', color: '#a0abc0', textTransform: 'capitalize' }}>{userRole}</div>
             </div>
           </div>
         </aside>
@@ -424,12 +577,19 @@ export default function App() {
             </div>
           </header>
 
-          {activeTab === 'Dashboard' ? (
-            <MonolithicDashboard 
-              data={data} 
+          {activeTab === 'Shops' ? (
+            <AdminShops token={token} />
+          ) : activeTab === 'Dashboard' ? (
+            <MonolithicDashboard
+              data={data}
               formatMoney={formatMoney}
               formatInvoiceType={formatInvoiceTypeFlexible}
               onCreateInvoice={() => setShowCreateModal(true)}
+              jewellerName={jewellerName}
+              shopAddress={shopAddress}
+              shopContact={shopContact}
+              shopGst={shopGst}
+              shopEmail={shopEmail}
             />
           ) : (
             <InventoryEnhanced
@@ -448,60 +608,324 @@ export default function App() {
 
       {showCreateModal && (
         <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-            <h2>Create Invoice</h2>
+          <div className="modal-card invoice-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-header-left">
+                <span className="modal-header-icon">📋</span>
+                <div>
+                  <h2>Create Invoice</h2>
+                  <p className="modal-subtitle">Fill in the details to generate a new invoice</p>
+                </div>
+              </div>
+              <button type="button" className="modal-close-btn" onClick={() => setShowCreateModal(false)} aria-label="Close">✕</button>
+            </div>
+
             <form onSubmit={onCreateInvoice} className="invoice-form">
-              <input
-                placeholder="Customer Name"
-                value={invoiceForm.customer}
-                onChange={(e) => setInvoiceForm((prev) => ({ ...prev, customer: e.target.value }))}
-                required
-              />
-              <input
-                placeholder="Items"
-                value={invoiceForm.items}
-                onChange={(e) => setInvoiceForm((prev) => ({ ...prev, items: e.target.value }))}
-                required
-              />
-              <select
-                value={invoiceForm.type}
-                onChange={(e) =>
-                  setInvoiceForm((prev) => ({ ...prev, type: e.target.value as CreateInvoicePayload['type'] }))
-                }
-              >
-                {invoiceTypeOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="number"
-                min="1"
-                placeholder="Amount"
-                value={invoiceForm.amount || ''}
-                onChange={(e) => setInvoiceForm((prev) => ({ ...prev, amount: Number(e.target.value) }))}
-                required
-              />
-              <select
-                value={invoiceForm.status}
-                onChange={(e) =>
-                  setInvoiceForm((prev) => ({ ...prev, status: e.target.value as CreateInvoicePayload['status'] }))
-                }
-              >
-                <option value="Pending">Pending</option>
-                <option value="Paid">Paid</option>
-                <option value="Draft">Draft</option>
-              </select>
+              <div className="modal-body">
+                {/* Customer Info Section */}
+                <div className="form-section">
+                  <div className="form-section-title">
+                    <span className="section-icon">👤</span>
+                    Customer Information
+                  </div>
+                  <div className="form-grid form-grid-2">
+                    <div className="form-field">
+                      <label>Customer Name</label>
+                      <input
+                        placeholder="e.g. Rajesh Kumar"
+                        value={invoiceForm.customer}
+                        onChange={(e) => setInvoiceForm((prev) => ({ ...prev, customer: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div className="form-field">
+                      <label>Mobile Number</label>
+                      <input
+                        placeholder="e.g. +91 9876543210"
+                        value={invoiceForm.mobilenumber || ''}
+                        onChange={(e) => setInvoiceForm((prev) => ({ ...prev, mobilenumber: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                  <div className="form-grid form-grid-1" style={{ marginTop: '1rem' }}>
+                    <div className="form-field">
+                      <label>Address</label>
+                      <input
+                        placeholder="e.g. 123 Main St, Mumbai"
+                        value={invoiceForm.address || ''}
+                        onChange={(e) => setInvoiceForm((prev) => ({ ...prev, address: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                </div>
 
-              {createError && <div className="login-error">{createError}</div>}
+                {/* Multiple Items Section */}
+                <div className="form-section">
+                  <div className="form-section-title">
+                    <span className="section-icon">🛍️</span>
+                    Invoice Items
+                  </div>
+                  <div className="invoice-items-list">
+                    {invoiceItems.map((item, idx) => (
+                      <div key={idx} className="invoice-item-row" style={{ border: '1px solid rgba(255, 255, 255, 0.08)', padding: '1.5rem', borderRadius: '12px', marginBottom: '1.5rem', position: 'relative', display: 'block', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+                        {invoiceItems.length > 1 && (
+                          <button
+                            type="button"
+                            className="remove-item-btn"
+                            style={{ position: 'absolute', top: '10px', right: '10px', background: 'transparent', color: '#F56565', border: 'none', cursor: 'pointer', fontSize: '1.2rem', margin: 0, padding: '0 5px' }}
+                            onClick={() => {
+                              const newItems = invoiceItems.filter((_, i) => i !== idx)
+                              setInvoiceItems(newItems)
+                            }}
+                            aria-label="Remove item"
+                          >
+                            ✕
+                          </button>
+                        )}
+                        <div className="form-grid form-grid-1" style={{ marginBottom: '1rem' }}>
+                          <div className="form-field">
+                            <label>Item Description</label>
+                            <input
+                              placeholder="e.g. Diamond Stud Earrings"
+                              value={item.description}
+                              onChange={(e) => {
+                                const newItems = invoiceItems.map((it, i) =>
+                                  i === idx ? { ...it, description: e.target.value } : it
+                                )
+                                setInvoiceItems(newItems)
+                              }}
+                              required
+                            />
+                          </div>
+                        </div>
+                        <div className="form-grid form-grid-5">
+                          <div className="form-field">
+                            <label>Metal Type</label>
+                            <select
+                              value={item.type}
+                              onChange={(e) => {
+                                const newItems = invoiceItems.map((it, i) =>
+                                  i === idx ? { ...it, type: e.target.value as InvoiceType } : it
+                                )
+                                setInvoiceItems(newItems)
+                              }}
+                              style={{
+                                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                                color: '#ffffff',
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                padding: '0.8rem',
+                                borderRadius: '8px',
+                                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.2)',
+                                fontSize: '0.95rem'
+                              }}
+                            >
+                              {invoiceTypeOptions.map((option) => (
+                                <option key={option.value} value={option.value} style={{ background: '#111520', color: '#fff' }}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="form-field">
+                            <label>Weight (g)</label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.001"
+                              placeholder="0.000"
+                              value={item.weight}
+                              onChange={(e) => {
+                                const newItems = invoiceItems.map((it, i) =>
+                                  i === idx ? { ...it, weight: e.target.value } : it
+                                )
+                                setInvoiceItems(newItems)
+                              }}
+                              required
+                            />
+                          </div>
+                          <div className="form-field">
+                            <label>Rate (₹/g)</label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              placeholder="0.00"
+                              value={item.rate}
+                              onChange={(e) => {
+                                const newItems = invoiceItems.map((it, i) =>
+                                  i === idx ? { ...it, rate: e.target.value } : it
+                                )
+                                setInvoiceItems(newItems)
+                              }}
+                              required
+                            />
+                          </div>
+                          <div className="form-field">
+                            <label>Making Chg (%)</label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.1"
+                              placeholder="0"
+                              value={item.makingChargePercent}
+                              onChange={(e) => {
+                                const newItems = invoiceItems.map((it, i) =>
+                                  i === idx ? { ...it, makingChargePercent: e.target.value } : it
+                                )
+                                setInvoiceItems(newItems)
+                              }}
+                            />
+                          </div>
+                          <div className="form-field">
+                            <label>GST (%)</label>
+                            <select
+                              value={item.gstRatePercent}
+                              onChange={(e) => {
+                                const newItems = invoiceItems.map((it, i) =>
+                                  i === idx ? { ...it, gstRatePercent: e.target.value } : it
+                                )
+                                setInvoiceItems(newItems)
+                              }}
+                              style={{
+                                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                                color: '#ffffff',
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                padding: '0.8rem',
+                                borderRadius: '8px',
+                                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.2)',
+                                fontSize: '0.95rem'
+                              }}
+                            >
+                              <option value="0" style={{ background: '#111520' }}>0%</option>
+                              {Array.from({ length: 20 }, (_, i) => i + 1).map(num => (
+                                <option key={num} value={num} style={{ background: '#111520', color: '#fff' }}>{num}%</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                        <div style={{ marginTop: '1.2rem', padding: '1rem', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '8px', textAlign: 'right', fontSize: '1.2rem', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                          <span style={{ color: '#A0ABC0', marginRight: '0.5rem' }}>Net Amount:</span>
+                          <span style={{ fontWeight: 'bold', color: '#d4af37' }}>
+                            ₹{formatMoney(((((Number(item.weight) || 0) * (Number(item.rate) || 0)) * (1 + (Number(item.makingChargePercent) || 0) / 100)) * (1 + (Number(item.gstRatePercent) || 0) / 100))).replace('₹', '')}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      className="add-item-btn"
+                      style={{ background: 'rgba(212, 175, 55, 0.1)', color: '#d4af37', border: '1px dashed rgba(212, 175, 55, 0.3)' }}
+                      onClick={() => setInvoiceItems([...invoiceItems, { description: '', type: 'GOLD_22K', weight: '', rate: '', makingChargePercent: '8', gstRatePercent: '3' }])}
+                    >
+                      + Add Item
+                    </button>
+                  </div>
+                </div>
 
-              <div className="modal-actions">
+
+                {/* Payment Details Section */}
+                <div className="form-section">
+                  <div className="form-section-title">
+                    <span className="section-icon">💳</span>
+                    Payment Details
+                  </div>
+                  <div className="form-grid form-grid-1">
+                    <div className="form-field">
+                      <label>Payment Method</label>
+                      <select
+                        className="payment-method-select"
+                        value={invoiceForm.paymentMethod}
+                        onChange={(e) =>
+                          setInvoiceForm((prev) => ({ ...prev, paymentMethod: e.target.value }))
+                        }
+                      >
+                        <option value="Cash">Cash</option>
+                        <option value="UPI">UPI</option>
+                        <option value="Credit Card">Credit Card</option>
+                        <option value="Debit Card">Debit Card</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Calculated Totals Section */}
+                <div className="form-section totals-section">
+                  <div className="form-section-title">
+                    <span className="section-icon">🧮</span>
+                    Calculated Totals
+                  </div>
+                  <div className="totals-grid">
+                    <div className="total-item">
+                      <span className="total-label">Base Amount</span>
+                      <span className="total-value">
+                        {formatMoney(
+                          invoiceItems.reduce((acc, item) => acc + ((Number(item.weight) || 0) * (Number(item.rate) || 0)) * (1 + (Number(item.makingChargePercent) || 0) / 100), 0)
+                        )}
+                      </span>
+                    </div>
+                    <div className="total-item">
+                      <span className="total-label">GST</span>
+                      <span className="total-value">
+                        {formatMoney(
+                          invoiceItems.reduce((acc, item) => acc + (((Number(item.weight) || 0) * (Number(item.rate) || 0)) * (1 + (Number(item.makingChargePercent) || 0) / 100)) * ((Number(item.gstRatePercent) || 0) / 100), 0)
+                        )}
+                      </span>
+                    </div>
+                    <div className="total-item total-highlight">
+                      <span className="total-label">Total Amount</span>
+                      <span className="total-value">
+                        {formatMoney(
+                          invoiceItems.reduce((acc, item) => acc + (((Number(item.weight) || 0) * (Number(item.rate) || 0)) * (1 + (Number(item.makingChargePercent) || 0) / 100)) * (1 + (Number(item.gstRatePercent) || 0) / 100), 0)
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status Section */}
+                <div className="form-section">
+                  <div className="form-section-title">
+                    <span className="section-icon">📌</span>
+                    Invoice Status
+                  </div>
+                  <div className="form-grid form-grid-1">
+                    <div className="form-field">
+                      <label>Payment Status</label>
+                      <select
+                        value={invoiceForm.status}
+                        onChange={(e) =>
+                          setInvoiceForm((prev) => ({ ...prev, status: e.target.value as CreateInvoicePayload['status'] }))
+                        }
+                      >
+                        <option value="Pending">⏳ Pending</option>
+                        <option value="Paid">✅ Paid</option>
+                        <option value="Draft">📝 Draft</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {createError && (
+                  <div className="modal-error">
+                    <span className="error-icon">⚠️</span>
+                    {createError}
+                  </div>
+                )}
+              </div>
+
+              <div className="modal-footer">
                 <button type="button" className="secondary-btn" onClick={() => setShowCreateModal(false)}>
                   Cancel
                 </button>
                 <button type="submit" className="primary-btn" disabled={savingInvoice}>
-                  {savingInvoice ? 'Saving...' : 'Create'}
+                  {savingInvoice ? (
+                    <>
+                      <span className="spinner"></span>
+                      Saving...
+                    </>
+                  ) : (
+                    <>✨ Create Invoice</>
+                  )}
                 </button>
               </div>
             </form>
