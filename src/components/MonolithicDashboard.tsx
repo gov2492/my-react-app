@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import type { DashboardPayload, InvoiceType, Invoice } from '../types/dashboard'
+import { CustomersTab } from './CustomersTab'
 import '../styles/jewellery-dashboard.css'
 
 interface MonolithicDashboardProps {
@@ -29,19 +30,37 @@ export function MonolithicDashboard({
 }: MonolithicDashboardProps) {
   const [activeView, setActiveView] = useState<'dashboard' | 'invoices' | 'allInvoices' | 'customers'>(() => {
     if (externalTab === 'Customers') return 'customers'
-    if (externalTab === 'Billing') return 'invoices'
-    return 'dashboard'
+    if (externalTab === 'Billing') {
+      const savedBillingView = localStorage.getItem('luxegem_billing_view') as 'invoices' | 'allInvoices'
+      return savedBillingView || 'invoices'
+    }
+    const savedDashboardView = localStorage.getItem('luxegem_dashboard_view') as 'dashboard'
+    return savedDashboardView || 'dashboard'
   })
 
+  // sync active view to local storage and prop changes
   useEffect(() => {
     if (externalTab === 'Customers') setActiveView('customers')
-    if (externalTab === 'Billing') setActiveView('invoices')
+    if (externalTab === 'Billing') {
+      const savedBillingView = localStorage.getItem('luxegem_billing_view') as 'invoices' | 'allInvoices'
+      setActiveView(savedBillingView || 'invoices')
+    }
     if (externalTab === 'Dashboard') setActiveView('dashboard')
   }, [externalTab])
+
+  const handleSubTabChange = (view: 'dashboard' | 'invoices' | 'allInvoices' | 'customers') => {
+    setActiveView(view)
+    if (externalTab === 'Billing' && (view === 'invoices' || view === 'allInvoices')) {
+      localStorage.setItem('luxegem_billing_view', view)
+    }
+  }
+
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'All' | 'Paid' | 'Pending' | 'Draft'>('All')
   const [viewingInvoiceTemplate, setViewingInvoiceTemplate] = useState<Invoice | null>(null)
+  const [allInvoicesPage, setAllInvoicesPage] = useState(1)
+  const PAGE_SIZE = 10
 
   useEffect(() => {
     const handleOpenPreview = (e: any) => {
@@ -87,60 +106,56 @@ export function MonolithicDashboard({
     )
   }, [data.invoices, statusFilter, searchTerm])
 
-  const getInitials = (name: string): string => {
-    return name
-      .split(' ')
-      .map((part) => part.charAt(0).toUpperCase())
-      .slice(0, 2)
-      .join('')
-  }
-
   const printInvoice = () => {
     window.print()
   }
 
+  const paginatedAllInvoices = useMemo(() => {
+    const start = (allInvoicesPage - 1) * PAGE_SIZE
+    return data.invoices.slice(start, start + PAGE_SIZE)
+  }, [data.invoices, allInvoicesPage])
+  const totalAllInvoicesPages = Math.ceil(data.invoices.length / PAGE_SIZE)
+
   return (
     <div className="jewellery-dashboard">
       {/* ===== HEADER ===== */}
-      <div className="dashboard-header">
-        <div className="header-top">
-          <div className="header-title">
-            <h1>💎 {jewellerName}</h1>
-            <p>Premium Gold, Platinum & Silver Shop</p>
+      {activeView !== 'customers' && (
+        <div className="dashboard-header">
+          <div className="header-top">
+            <div className="header-title">
+              <h1>💎 {jewellerName}</h1>
+              <p>Premium Gold, Platinum & Silver Shop</p>
+            </div>
+            <button className="btn-create-invoice" onClick={onCreateInvoice}>
+              ✨ Create New Invoice
+            </button>
           </div>
-          <button className="btn-create-invoice" onClick={onCreateInvoice}>
-            ✨ Create New Invoice
-          </button>
-        </div>
 
-        {/* Navigation */}
-        <div className="nav-tabs">
-          <button
-            className={`nav-tab ${activeView === 'dashboard' ? 'active' : ''}`}
-            onClick={() => setActiveView('dashboard')}
-          >
-            📊 Dashboard
-          </button>
-          <button
-            className={`nav-tab ${activeView === 'invoices' ? 'active' : ''}`}
-            onClick={() => setActiveView('invoices')}
-          >
-            📋 Invoices ({data.invoices.length})
-          </button>
-          <button
-            className={`nav-tab ${activeView === 'allInvoices' ? 'active' : ''}`}
-            onClick={() => setActiveView('allInvoices')}
-          >
-            📑 All Invoices ({data.invoices.length})
-          </button>
-          <button
-            className={`nav-tab ${activeView === 'customers' ? 'active' : ''}`}
-            onClick={() => setActiveView('customers')}
-          >
-            👥 Customers
-          </button>
+          {/* Navigation */}
+          {externalTab === 'Billing' && (
+            <div className="nav-tabs">
+              <button
+                className={`nav-tab ${activeView === 'dashboard' ? 'active' : ''}`}
+                onClick={() => handleSubTabChange('dashboard')}
+              >
+                📊 Dashboard
+              </button>
+              <button
+                className={`nav-tab ${activeView === 'invoices' ? 'active' : ''}`}
+                onClick={() => handleSubTabChange('invoices')}
+              >
+                📋 Invoices ({data.invoices.length})
+              </button>
+              <button
+                className={`nav-tab ${activeView === 'allInvoices' ? 'active' : ''}`}
+                onClick={() => handleSubTabChange('allInvoices')}
+              >
+                📑 All Invoices ({data.invoices.length})
+              </button>
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       {/* ===== DASHBOARD VIEW ===== */}
       {activeView === 'dashboard' && (
@@ -276,7 +291,7 @@ export function MonolithicDashboard({
                   </div>
                   <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
                     <label>Items</label>
-                    <div className="items-table" style={{ marginTop: '0.5rem' }}>
+                    <div className="items-table" style={{ marginTop: '0.5rem', overflowX: 'auto' }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
                         <thead style={{ backgroundColor: '#f8fafc', color: '#1e3a8a' }}>
                           <tr>
@@ -384,64 +399,90 @@ export function MonolithicDashboard({
 
           <div className="all-invoices-table">
             {data.invoices.length > 0 ? (
-              <div className="table-wrapper">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Invoice ID</th>
-                      <th>Customer</th>
-                      <th>Metal Type</th>
-                      <th>Items</th>
-                      <th>Amount</th>
-                      <th>Status</th>
-                      <th>Date</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.invoices.map((invoice) => (
-                      <tr key={invoice.invoiceId}>
-                        <td>
-                          <code>{invoice.invoiceId}</code>
-                        </td>
-                        <td>{invoice.customer}</td>
-                        <td>
-                          <span className="metal-badge">
-                            {formatInvoiceType(invoice.type)}
-                          </span>
-                        </td>
-                        <td>
-                          <div style={{ maxHeight: '60px', overflowY: 'auto', fontSize: '0.85rem', maxWidth: '300px' }}>
-                            {invoice.items.map((item, idx) => (
-                              <div key={idx} style={{ whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                                <strong>{item.weight}g</strong> {item.description}
-                              </div>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="amount-cell">
-                          {formatMoney(invoice.amount)}
-                        </td>
-                        <td>
-                          <span className={`badge status-${invoice.status.toLowerCase()}`}>
-                            {invoice.status}
-                          </span>
-                        </td>
-                        <td>{new Date().toLocaleDateString('en-IN')}</td>
-                        <td>
-                          <button
-                            className="btn-download"
-                            onClick={() => setViewingInvoiceTemplate(invoice)}
-                            title="View invoice template"
-                          >
-                            👁️
-                          </button>
-                        </td>
+              <>
+                <div className="table-wrapper">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Invoice ID</th>
+                        <th>Customer</th>
+                        <th>Metal Type</th>
+                        <th>Items</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Action</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {paginatedAllInvoices.map((invoice) => (
+                        <tr key={invoice.invoiceId}>
+                          <td>
+                            <code>{invoice.invoiceId}</code>
+                          </td>
+                          <td>{invoice.customer}</td>
+                          <td>
+                            <span className="metal-badge">
+                              {formatInvoiceType(invoice.type)}
+                            </span>
+                          </td>
+                          <td>
+                            <div style={{ maxHeight: '60px', overflowY: 'auto', fontSize: '0.85rem', maxWidth: '300px' }}>
+                              {invoice.items.map((item, idx) => (
+                                <div key={idx} style={{ whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                                  <strong>{item.weight}g</strong> {item.description}
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="amount-cell">
+                            {formatMoney(invoice.amount)}
+                          </td>
+                          <td>
+                            <span className={`badge status-${invoice.status.toLowerCase()}`}>
+                              {invoice.status}
+                            </span>
+                          </td>
+                          <td>{new Date().toLocaleDateString('en-IN')}</td>
+                          <td>
+                            <button
+                              className="btn-download"
+                              onClick={() => setViewingInvoiceTemplate(invoice)}
+                              title="View invoice template"
+                            >
+                              👁️
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {totalAllInvoicesPages > 1 && (
+                  <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem' }}>
+                    <button
+                      disabled={allInvoicesPage === 1}
+                      onClick={() => setAllInvoicesPage(p => p - 1)}
+                      className="btn-page"
+                      style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid #e2e8f0', background: allInvoicesPage === 1 ? '#f8fafc' : 'white', cursor: allInvoicesPage === 1 ? 'not-allowed' : 'pointer' }}
+                    >
+                      Previous
+                    </button>
+                    <span style={{ fontSize: '0.9rem', color: '#64748b' }}>
+                      Page {allInvoicesPage} of {totalAllInvoicesPages}
+                    </span>
+                    <button
+                      disabled={allInvoicesPage === totalAllInvoicesPages}
+                      onClick={() => setAllInvoicesPage(p => p + 1)}
+                      className="btn-page"
+                      style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid #e2e8f0', background: allInvoicesPage === totalAllInvoicesPages ? '#f8fafc' : 'white', cursor: allInvoicesPage === totalAllInvoicesPages ? 'not-allowed' : 'pointer' }}
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="empty-state">
                 <p>No invoices found</p>
@@ -453,57 +494,16 @@ export function MonolithicDashboard({
 
       {/* ===== CUSTOMERS VIEW ===== */}
       {activeView === 'customers' && (
-        <div className="view-content customers-view">
-          <div className="customers-grid">
-            {[...new Set(data.invoices.map(inv => inv.customer))].map((customer) => {
-              const customerInvoices = data.invoices.filter(inv => inv.customer === customer)
-              const totalSpent = customerInvoices.reduce((sum, inv) => sum + inv.amount, 0)
-
-              if (totalSpent <= 0) return null;
-
-              return (
-                <div key={customer} className="customer-card">
-                  <div className="customer-avatar">
-                    {getInitials(customer)}
-                  </div>
-                  <h3>{customer}</h3>
-                  <div className="customer-stats">
-                    <div className="stat">
-                      <span className="label">Total Spent</span>
-                      <span className="value">{formatMoney(totalSpent)}</span>
-                    </div>
-                    <div className="stat">
-                      <span className="label">Purchases</span>
-                      <span className="value">{customerInvoices.length}</span>
-                    </div>
-                  </div>
-                  <div className="customer-purchases">
-                    <h4 style={{ fontSize: '0.85rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Recent Purchases</h4>
-                    {customerInvoices.slice(0, 3).map((inv) => (
-                      <div key={inv.invoiceId} className="purchase-detail-card" style={{ padding: '0.75rem', background: '#f8fafc', borderRadius: '8px', marginBottom: '0.5rem', border: '1px solid #e2e8f0' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', alignItems: 'center' }}>
-                          <span style={{ fontWeight: 'bold', color: '#1e3a8a', fontSize: '0.85rem' }}>#{inv.invoiceId}</span>
-                          <span className={`status status-${inv.status.toLowerCase()}`} style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', margin: 0 }}>
-                            {inv.status}
-                          </span>
-                        </div>
-                        <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.4rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {inv.items?.map(i => i.description).join(', ') || 'No items listed'}
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem' }}>
-                          <span style={{ color: '#059669', fontWeight: 'bold' }}>{formatMoney(inv.amount)}</span>
-                          <span style={{ color: '#94a3b8' }}>
-                            {new Date(inv.createdAt || (inv as any).issueDate || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
+        <CustomersTab
+          invoices={data.invoices}
+          formatMoney={formatMoney}
+          onViewInvoice={(id) => {
+            const invoice = data.invoices.find(inv => inv.invoiceId === id);
+            if (invoice) {
+              setViewingInvoiceTemplate(invoice);
+            }
+          }}
+        />
       )}
 
       {/* ===== BEAUTIFUL INVOICE TEMPLATE ===== */}
@@ -579,7 +579,7 @@ export function MonolithicDashboard({
               </div>
 
               {/* Items Table Section */}
-              <div className="invoice-items-section">
+              <div className="invoice-items-section" style={{ overflowX: 'auto' }}>
                 <table className="premium-table">
                   <thead>
                     <tr>

@@ -156,6 +156,8 @@ body {
 .content {
   padding: 32px 40px;
   background: #0B0E14;
+  min-width: 0;
+  /* Prevents CSS Grid blowout */
 }
 
 .topbar {

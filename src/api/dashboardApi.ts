@@ -36,7 +36,7 @@ export async function createInvoice(token: string, payload: CreateInvoicePayload
 
 export async function fetchInventory(token: string, query?: string): Promise<InventoryItem[]> {
   const search = query?.trim() ? `?q=${encodeURIComponent(query.trim())}` : ''
-  const response = await fetch(`${API_URL}/api/dashboard/inventory${search}`, {
+  const response = await fetch(`${API_URL}/api/inventory${search}`, {
     headers: {
       Authorization: `Bearer ${token}`
     }
@@ -50,7 +50,7 @@ export async function fetchInventory(token: string, query?: string): Promise<Inv
 }
 
 export async function createInventory(token: string, payload: CreateInventoryPayload): Promise<InventoryItem> {
-  const response = await fetch(`${API_URL}/api/dashboard/inventory`, {
+  const response = await fetch(`${API_URL}/api/inventory`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,

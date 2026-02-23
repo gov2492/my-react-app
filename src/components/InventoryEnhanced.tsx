@@ -144,7 +144,7 @@ export function InventoryEnhanced({
       </div>
 
       {/* Modern Card Grid */}
-      <div className="inventory-grid-premium" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
+      <div className="inventory-grid-premium" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: '1.5rem' }}>
         {filteredItems.length === 0 ? (
           <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '4rem', color: '#718096' }}>
             <span style={{ fontSize: '3rem', display: 'block', marginBottom: '1rem', opacity: 0.5 }}>📦</span>
@@ -162,17 +162,17 @@ export function InventoryEnhanced({
               overflow: 'hidden',
               transition: 'transform 0.3s ease, box-shadow 0.3s ease'
             }}>
-              {item.metalType.toLowerCase() === 'gold' && (
+              {item.metalType?.toLowerCase() === 'gold' && (
                 <div style={{ position: 'absolute', top: 0, right: 0, background: 'rgba(212, 175, 55, 0.15)', color: '#D4AF37', padding: '0.4rem 1rem', borderBottomLeftRadius: '16px', fontSize: '0.8rem', fontWeight: 'bold', border: '1px solid rgba(212, 175, 55, 0.2)', borderTop: 'none', borderRight: 'none' }}>
                   {item.purity} Gold
                 </div>
               )}
-              {item.metalType.toLowerCase() === 'platinum' && (
+              {item.metalType?.toLowerCase() === 'platinum' && (
                 <div style={{ position: 'absolute', top: 0, right: 0, background: 'rgba(229, 228, 226, 0.15)', color: '#E5E4E2', padding: '0.4rem 1rem', borderBottomLeftRadius: '16px', fontSize: '0.8rem', fontWeight: 'bold', border: '1px solid rgba(229, 228, 226, 0.2)', borderTop: 'none', borderRight: 'none' }}>
                   Platinum
                 </div>
               )}
-              {item.metalType.toLowerCase() === 'silver' && (
+              {item.metalType?.toLowerCase() === 'silver' && (
                 <div style={{ position: 'absolute', top: 0, right: 0, background: 'rgba(192, 192, 192, 0.15)', color: '#C0C0C0', padding: '0.4rem 1rem', borderBottomLeftRadius: '16px', fontSize: '0.8rem', fontWeight: 'bold', border: '1px solid rgba(192, 192, 192, 0.2)', borderTop: 'none', borderRight: 'none' }}>
                   Silver
                 </div>

@@ -610,33 +610,45 @@ code {
   box-shadow: 0 8px 20px rgba(244, 63, 94, 0.25);
 }
 
-/* ===== CUSTOMERS VIEW ===== */
+/* ===== CUSTOMERS VIEW COMPACT ===== */
 
-.customers-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem;
+.customers-list-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
-.customer-card {
+.customer-compact-card {
   background: white;
-  border-radius: 1rem;
-  padding: 2rem;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
   border: 1px solid #e2e8f0;
-  transition: all 0.3s ease;
-  text-align: center;
+  transition: all 0.2s ease;
+  display: flex;
+  gap: 24px;
+  align-items: center;
 }
 
-.customer-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 32px rgba(30, 64, 175, 0.12);
-  border-color: rgba(30, 64, 175, 0.2);
+.customer-compact-card:hover {
+  box-shadow: 0 8px 24px rgba(30, 64, 175, 0.08);
+  border-color: rgba(30, 64, 175, 0.15);
 }
 
-.customer-avatar {
-  width: 60px;
-  height: 60px;
+.customer-compact-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 320px;
+  border-right: 1px solid #e2e8f0;
+  padding-right: 24px;
+}
+
+.customer-avatar-small {
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%);
   color: white;
@@ -644,90 +656,103 @@ code {
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 1.25rem;
-  margin: 0 auto 1rem;
+  font-size: 1rem;
+  flex-shrink: 0;
 }
 
-.customer-card h3 {
-  margin: 0 0 1.5rem 0;
-  font-size: 1.25rem;
+.customer-compact-info h3 {
+  margin: 0 0 6px 0;
+  font-size: 1.1rem;
   font-weight: 800;
   color: #1e3a8a;
+  white-space: nowrap;
 }
 
-.customer-stats {
+.customer-compact-stats {
   display: flex;
-  justify-content: space-around;
-  margin-bottom: 1.5rem;
+  gap: 8px;
 }
 
-.customer-stats .stat {
+.compact-stat-pill {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  background: #f1f5f9;
+  color: #475569;
+  border-radius: 6px;
+}
+
+.compact-stat-pill.amount {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.compact-stat-pill strong {
+  margin-right: 2px;
+}
+
+.customer-compact-purchases {
   flex: 1;
-  text-align: center;
+  min-width: 0;
 }
 
-.customer-stats .label {
-  display: block;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  margin-bottom: 0.5rem;
-}
-
-.customer-stats .value {
-  display: block;
-  font-size: 1.5rem;
-  font-weight: 900;
-  color: #1e40af;
-}
-
-.customer-purchases {
+.compact-purchases-scroll {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  padding-top: 1rem;
-  border-top: 2px solid #e2e8f0;
+  gap: 8px;
 }
 
-.purchase {
+.compact-purchase-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.95rem;
-  padding: 0.75rem;
   background: #f8fafc;
-  border-radius: 0.5rem;
+  border: 1px solid #f1f5f9;
+  border-radius: 8px;
+  padding: 8px 12px;
 }
 
-.purchase span:first-child {
-  font-weight: 700;
+.compact-purchase-left {
+  display: flex;
+  flex-direction: column;
+  width: 100px;
+}
+
+.compact-id {
+  font-weight: 800;
   color: #1e3a8a;
-}
-
-.purchase .status {
   font-size: 0.8rem;
-  font-weight: 700;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.375rem;
-  background: rgba(30, 64, 175, 0.1);
-  color: #1e40af;
 }
 
-.purchase .status.status-paid {
-  background: #dcfce7;
-  color: #166534;
+.compact-date {
+  font-size: 0.75rem;
+  color: #64748b;
 }
 
-.purchase .status.status-pending {
-  background: #fef3c7;
-  color: #92400e;
+.compact-purchase-mid {
+  flex: 1;
+  padding: 0 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.purchase .status.status-draft {
-  background: #e5e7eb;
-  color: #374151;
+.compact-desc {
+  font-size: 0.8rem;
+  color: #475569;
+  font-weight: 500;
+}
+
+.compact-purchase-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.compact-amount {
+  font-weight: 800;
+  color: #059669;
+  font-size: 0.85rem;
 }
 
 /* ===== RESPONSIVE ===== */

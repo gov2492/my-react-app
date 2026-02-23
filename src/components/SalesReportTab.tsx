@@ -118,9 +118,11 @@ function SortHeader({
 }) {
   const active = activeSort === sortKey
   return (
-    <button type="button" className="sort-header" onClick={() => onSort(sortKey)}>
+    <button type="button" className="sort-btn" onClick={() => onSort(sortKey)}>
       {label}
-      <span className={`sort-caret ${active ? 'active' : ''}`}>{active ? (sortDir === 'asc' ? '↑' : '↓') : '↕'}</span>
+      <span style={{ color: active ? '#D4AF37' : '#718096', fontSize: '10px' }}>
+        {active ? (sortDir === 'asc' ? '▲' : '▼') : '↕'}
+      </span>
     </button>
   )
 }
@@ -287,11 +289,11 @@ export function SalesReportTab({ token, formatMoney, globalSearch }: SalesReport
   const maxMetalAmount = useMemo(() => Math.max(...report.metalComparison.map((item) => item.amount), 1), [report.metalComparison])
 
   const summaryCards = [
-    { label: 'Total Sales Amount', value: formatMoney(report.summary.totalSalesAmount), accent: 'gold' },
-    { label: 'Total Invoices', value: report.summary.totalInvoices.toLocaleString('en-IN'), accent: 'slate' },
-    { label: 'Total GST Collected', value: formatMoney(report.summary.totalGstCollected), accent: 'purple' },
-    { label: 'Total Gold Sold (grams)', value: report.summary.totalGoldSoldGrams.toFixed(3), accent: 'gold' },
-    { label: 'Total Silver Sold (grams)', value: report.summary.totalSilverSoldGrams.toFixed(3), accent: 'silver' }
+    { label: 'Total Sales', value: formatMoney(report.summary.totalSalesAmount), accent: 'gold-accent', icon: '💎' },
+    { label: 'Invoices', value: report.summary.totalInvoices.toLocaleString('en-IN'), accent: 'slate-accent', icon: '📄' },
+    { label: 'Tax Collected', value: formatMoney(report.summary.totalGstCollected), accent: 'purple-accent', icon: '🏦' },
+    { label: 'Gold Sold (g)', value: report.summary.totalGoldSoldGrams.toFixed(3), accent: 'gold-accent', icon: '✨' },
+    { label: 'Silver Sold (g)', value: report.summary.totalSilverSoldGrams.toFixed(3), accent: 'silver-accent', icon: '🌙' }
   ]
 
   const emptyRowsMessage = useMemo(() => {
@@ -407,257 +409,272 @@ export function SalesReportTab({ token, formatMoney, globalSearch }: SalesReport
   }
 
   return (
-    <section className="sales-report-root">
-      <header className="sales-report-header">
-        <div>
-          <p className="report-breadcrumb">Reports / Sales Report</p>
-          <h2>Sales Report</h2>
-          <p className="report-subtitle">Track performance with date-wise analytics, filters, and export-ready summaries.</p>
-        </div>
-        <div className="report-actions">
-          <button type="button" className="report-action" onClick={() => void onExportPdf()}>Export as PDF</button>
-          <button type="button" className="report-action" onClick={() => void onExportExcel()}>Export as Excel</button>
-          <button type="button" className="report-action" onClick={onPrint}>Print Report</button>
-        </div>
-      </header>
+    <div className="sales-report-modern-root">
 
-      <section className="report-filters-card">
-        <div className="report-filter-grid">
-          <label>
-            Date Filter
-            <select value={dateFilter} onChange={(event) => onDateFilterChange(event.target.value as SalesDateFilter)}>
+      {/* Header */}
+      <div className="sales-report-header-premium">
+        <div>
+          <h2 style={{ fontSize: '2.2rem', margin: 0, fontWeight: 700, display: 'flex', alignItems: 'center', gap: '12px' }}>
+            📈 <span>Sales Overview</span>
+          </h2>
+          <p className="report-subtitle-modern">Track store performance, compare sales data, and extract detailed analytics.</p>
+        </div>
+        <div className="report-actions-modern">
+          <button type="button" className="report-btn-outline" onClick={() => void onExportPdf()}>PDF</button>
+          <button type="button" className="report-btn-outline" onClick={() => void onExportExcel()}>CSV</button>
+          <button type="button" className="report-btn-primary" onClick={onPrint}>Print</button>
+        </div>
+      </div>
+
+      {/* Global Error Banner */}
+      {error && (
+        <div style={{ background: '#FFF5F5', color: '#C53030', padding: '16px', borderRadius: '12px', border: '1px solid #FEB2B2' }}>
+          <strong>Error loading report:</strong> {error}
+        </div>
+      )}
+
+      {/* Filters Card */}
+      <div className="premium-card">
+        <div className="filters-grid-modern">
+
+          <div className="filter-group">
+            <label>Date Filter</label>
+            <select className="filter-input" value={dateFilter} onChange={(e) => onDateFilterChange(e.target.value as SalesDateFilter)}>
               {dateFilterOptions.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
               ))}
             </select>
-          </label>
+          </div>
 
           {dateFilter === 'CUSTOM' && (
             <>
-              <label>
-                From Date
-                <input type="date" value={customFrom} onChange={(event) => setCustomFrom(event.target.value)} />
-              </label>
-              <label>
-                To Date
-                <input type="date" value={customTo} onChange={(event) => setCustomTo(event.target.value)} />
-              </label>
-              <div className="filter-apply-wrap">
-                <button type="button" className="apply-btn" onClick={onApplyCustomRange}>Apply</button>
+              <div className="filter-group">
+                <label>From Date</label>
+                <input className="filter-input" type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} />
+              </div>
+              <div className="filter-group">
+                <label>To Date</label>
+                <input className="filter-input" type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} />
+              </div>
+              <div className="filter-group">
+                <label>&nbsp;</label>
+                <button type="button" className="filter-apply-btn" onClick={onApplyCustomRange}>Apply Focus</button>
               </div>
             </>
           )}
-        </div>
 
-        <div className="report-filter-grid advanced">
-          <label>
-            Search (Invoice / Customer)
-            <input
-              type="text"
-              value={search}
-              placeholder="Search invoice number or customer"
-              onChange={(event) => {
-                setSearch(event.target.value)
-                setPage(0)
-              }}
-            />
-          </label>
+          <div className="filter-group">
+            <label>Keyword Search</label>
+            <input className="filter-input" type="text" value={search} placeholder="Invoice or Customer" onChange={(e) => { setSearch(e.target.value); setPage(0) }} />
+          </div>
 
-          <label>
-            Payment Method
-            <select value={paymentMethod} onChange={(event) => { setPaymentMethod(event.target.value); setPage(0) }}>
-              <option value="">All</option>
+          <div className="filter-group">
+            <label>Payment Method</label>
+            <select className="filter-input" value={paymentMethod} onChange={(e) => { setPaymentMethod(e.target.value); setPage(0) }}>
+              <option value="">All Methods</option>
               <option value="Cash">Cash</option>
               <option value="UPI">UPI</option>
               <option value="Card">Card</option>
             </select>
-          </label>
+          </div>
 
-          <label>
-            Metal Type
-            <select value={metalType} onChange={(event) => { setMetalType(event.target.value); setPage(0) }}>
-              <option value="">All</option>
+          <div className="filter-group">
+            <label>Salesperson</label>
+            <input className="filter-input" type="text" value={salesperson} placeholder="Admin / Staff" onChange={(e) => { setSalesperson(e.target.value); setPage(0) }} />
+          </div>
+
+          <div className="filter-group">
+            <label>Metal Focus</label>
+            <select className="filter-input" value={metalType} onChange={(e) => { setMetalType(e.target.value); setPage(0) }}>
+              <option value="">All Metals</option>
               <option value="Gold">Gold</option>
               <option value="Silver">Silver</option>
               <option value="Platinum">Platinum</option>
               <option value="Diamond">Diamond</option>
             </select>
-          </label>
+          </div>
 
-          <label>
-            Salesperson
-            <input type="text" value={salesperson} placeholder="Admin / Staff" onChange={(event) => { setSalesperson(event.target.value); setPage(0) }} />
-          </label>
+          <div className="filter-group">
+            <label>Min Amt (₹)</label>
+            <input className="filter-input" type="number" value={minAmount} placeholder="e.g. 5000" min="0" onChange={(e) => { setMinAmount(e.target.value); setPage(0) }} />
+          </div>
 
-          <label>
-            Min Amount
-            <input type="number" value={minAmount} placeholder="0" min="0" onChange={(event) => { setMinAmount(event.target.value); setPage(0) }} />
-          </label>
+          <div className="filter-group">
+            <label>Max Amt (₹)</label>
+            <input className="filter-input" type="number" value={maxAmount} placeholder="e.g. 100000" min="0" onChange={(e) => { setMaxAmount(e.target.value); setPage(0) }} />
+          </div>
 
-          <label>
-            Max Amount
-            <input type="number" value={maxAmount} placeholder="100000" min="0" onChange={(event) => { setMaxAmount(event.target.value); setPage(0) }} />
-          </label>
         </div>
-      </section>
+      </div>
 
-      <section className="summary-card-grid">
+      {/* Overview Stats */}
+      <div className="summary-cards-grid">
         {summaryCards.map((card) => (
-          <article key={card.label} className={`summary-card ${card.accent}`}>
-            <p>{card.label}</p>
-            <h3>{card.value}</h3>
-          </article>
+          <div key={card.label} className={`summary-stat-card ${card.accent}`}>
+            <span className="icon-bg">{card.icon}</span>
+            <div className="summary-label">{card.label}</div>
+            <h3 className="summary-value">{card.value}</h3>
+          </div>
         ))}
-      </section>
+      </div>
 
-      <section className="charts-grid">
-        <article className="chart-card">
-          <h3>Sales Trend</h3>
+      {/* Visual Analytics */}
+      <div className="charts-grid-modern">
+        <div className="premium-card">
+          <h3 className="chart-title">📊 Sales Value Trend</h3>
           {report.salesTrend.length > 0 ? (
             <>
-              <svg viewBox="0 0 720 220" className="line-chart" role="img" aria-label="Sales trend chart">
-                <polyline points={trendPolyline} fill="none" stroke="#D4AF37" strokeWidth="3" strokeLinecap="round" />
+              <svg viewBox="0 0 720 220" className="line-chart-svg">
+                <polyline points={trendPolyline} fill="none" stroke="#D4AF37" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              <div className="chart-footnote">{report.salesTrend.length} points</div>
+              <p style={{ textAlign: 'center', color: '#A0ABC0', fontSize: '0.8rem', marginTop: '10px' }}>
+                Showing timeline distributions based on selection.
+              </p>
             </>
           ) : (
-            <div className="chart-empty">No trend data for selected range</div>
+            <div className="empty-state">No trend data available.</div>
           )}
-        </article>
-
-        <article className="chart-card">
-          <h3>Payment Distribution</h3>
-          <div className="pie-layout">
-            <div className="pie-chart" style={{ background: pieGradient }} />
-            <ul className="legend-list">
-              {report.paymentDistribution.length === 0 && <li className="legend-empty">No payment data</li>}
-              {report.paymentDistribution.map((item, index) => {
-                const total = report.paymentDistribution.reduce((sum, entry) => sum + entry.amount, 0) || 1
-                const share = (item.amount / total) * 100
-                return (
-                  <li key={item.paymentMethod}>
-                    <span className="dot" style={{ backgroundColor: chartColors[index % chartColors.length] }} />
-                    <span>{item.paymentMethod}</span>
-                    <strong>{share.toFixed(1)}%</strong>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-        </article>
-
-        <article className="chart-card">
-          <h3>Metal-wise Sales</h3>
-          <div className="bar-chart">
-            {report.metalComparison.length === 0 && <div className="chart-empty">No metal data</div>}
-            {report.metalComparison.map((item, index) => (
-              <div key={item.metalType} className="bar-row">
-                <div className="bar-label">{item.metalType}</div>
-                <div className="bar-track">
-                  <div
-                    className="bar-fill"
-                    style={{
-                      width: `${(item.amount / maxMetalAmount) * 100}%`,
-                      backgroundColor: chartColors[index % chartColors.length]
-                    }}
-                  />
-                </div>
-                <div className="bar-value">{formatMoney(item.amount)}</div>
-              </div>
-            ))}
-          </div>
-        </article>
-      </section>
-
-      <section className="sales-table-card">
-        <div className="table-header-row">
-          <h3>Sales Details</h3>
-          <div className="table-meta">{report.totalElements.toLocaleString('en-IN')} records</div>
         </div>
 
-        {loading && <div className="table-state">Loading report...</div>}
-        {error && <div className="table-state error">{error}</div>}
+        <div className="premium-card">
+          <h3 className="chart-title">💳 Payment Modes</h3>
+          <div className="pie-layout-modern">
+            {report.paymentDistribution.length > 0 ? (
+              <>
+                <div className="pie-chart-circle" style={{ background: pieGradient }} />
+                <div className="legend-list-modern">
+                  {report.paymentDistribution.map((item, index) => {
+                    const total = report.paymentDistribution.reduce((sum, entry) => sum + entry.amount, 0) || 1
+                    const share = (item.amount / total) * 100
+                    return (
+                      <div className="legend-item" key={item.paymentMethod}>
+                        <div className="legend-item-left">
+                          <span className="legend-dot" style={{ backgroundColor: chartColors[index % chartColors.length] }} />
+                          <span>{item.paymentMethod}</span>
+                        </div>
+                        <strong>{share.toFixed(1)}%</strong>
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
+            ) : (
+              <div className="empty-state" style={{ width: '100%' }}>No payment distributions.</div>
+            )}
+          </div>
+        </div>
 
-        {!loading && !error && (
-          <>
-            <div className="sales-report-table-wrap">
-              <table className="sales-report-table">
+        <div className="premium-card">
+          <h3 className="chart-title">💍 Segment Analysis</h3>
+          <div className="bar-layout-modern">
+            {report.metalComparison.length > 0 ? (
+              report.metalComparison.map((item, index) => (
+                <div key={item.metalType} className="bar-row-modern">
+                  <div className="bar-label-modern">{item.metalType}</div>
+                  <div className="bar-track-modern">
+                    <div
+                      className="bar-fill-modern"
+                      style={{
+                        width: `${(item.amount / maxMetalAmount) * 100}%`,
+                        backgroundColor: chartColors[index % chartColors.length]
+                      }}
+                    />
+                  </div>
+                  <div className="bar-value-modern">{formatMoney(item.amount)}</div>
+                </div>
+              ))
+            ) : (
+              <div className="empty-state">No segments mapped yet.</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Complex Data Table */}
+      <div className="premium-card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '24px 24px 16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+          <h3 style={{ margin: 0, fontSize: '1.2rem' }}>Detailed Transaction Logs</h3>
+          <span style={{ color: '#D4AF37', background: 'rgba(212, 175, 55, 0.1)', padding: '6px 12px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 600 }}>
+            {report.totalElements} Records Found
+          </span>
+        </div>
+
+        {loading && <div className="empty-state" style={{ padding: '60px' }}>Loading transaction records...</div>}
+
+        {!loading && (
+          <div style={{ padding: '24px' }}>
+            <div style={{ overflowX: 'auto', overflowY: 'hidden' }}>
+              <table className="sales-table-premium">
                 <thead>
                   <tr>
-                    <th><SortHeader label="Invoice Number" sortKey="invoiceNumber" activeSort={sortBy} sortDir={sortDir} onSort={onSort} /></th>
+                    <th><SortHeader label="INV#" sortKey="invoiceNumber" activeSort={sortBy} sortDir={sortDir} onSort={onSort} /></th>
                     <th><SortHeader label="Date" sortKey="date" activeSort={sortBy} sortDir={sortDir} onSort={onSort} /></th>
-                    <th><SortHeader label="Customer Name" sortKey="customerName" activeSort={sortBy} sortDir={sortDir} onSort={onSort} /></th>
-                    <th><SortHeader label="Payment Method" sortKey="paymentMethod" activeSort={sortBy} sortDir={sortDir} onSort={onSort} /></th>
-                    <th><SortHeader label="Metal Type" sortKey="metalType" activeSort={sortBy} sortDir={sortDir} onSort={onSort} /></th>
-                    <th>Total Weight</th>
-                    <th>GST</th>
-                    <th><SortHeader label="Net Amount" sortKey="netAmount" activeSort={sortBy} sortDir={sortDir} onSort={onSort} /></th>
-                    <th><SortHeader label="Salesperson" sortKey="salesperson" activeSort={sortBy} sortDir={sortDir} onSort={onSort} /></th>
+                    <th><SortHeader label="Customer" sortKey="customerName" activeSort={sortBy} sortDir={sortDir} onSort={onSort} /></th>
+                    <th><SortHeader label="Method" sortKey="paymentMethod" activeSort={sortBy} sortDir={sortDir} onSort={onSort} /></th>
+                    <th><SortHeader label="Metal" sortKey="metalType" activeSort={sortBy} sortDir={sortDir} onSort={onSort} /></th>
+                    <th className="text-right">Weight</th>
+                    <th className="text-right">Tax (GST)</th>
+                    <th className="text-right"><SortHeader label="Net Amount" sortKey="netAmount" activeSort={sortBy} sortDir={sortDir} onSort={onSort} /></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {report.rows.length === 0 && (
+                  {report.rows.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="empty-cell">{emptyRowsMessage}</td>
+                      <td colSpan={8} className="empty-state" style={{ borderBottom: 'none' }}>{emptyRowsMessage}</td>
                     </tr>
+                  ) : (
+                    report.rows.map((row) => (
+                      <tr key={`${row.invoiceNumber}-${row.date}`}>
+                        <td className="font-mono text-gold font-bold">{row.invoiceNumber}</td>
+                        <td style={{ color: '#A0ABC0' }}>{new Date(row.date).toLocaleDateString('en-IN')}</td>
+                        <td className="font-bold">{row.customerName}</td>
+                        <td><span className="badge-tag">{row.paymentMethod}</span></td>
+                        <td>{row.metalType}</td>
+                        <td className="text-right" style={{ color: '#A0ABC0' }}>{row.totalWeight.toFixed(3)}g</td>
+                        <td className="text-right" style={{ color: '#A0ABC0' }}>{formatMoney(row.gst)}</td>
+                        <td className="text-right text-gold font-bold" style={{ fontSize: '1.05rem' }}>{formatMoney(row.netAmount)}</td>
+                      </tr>
+                    ))
                   )}
-                  {report.rows.map((row) => (
-                    <tr key={`${row.invoiceNumber}-${row.date}`}>
-                      <td className="mono">{row.invoiceNumber}</td>
-                      <td>{new Date(row.date).toLocaleDateString('en-IN')}</td>
-                      <td>{row.customerName}</td>
-                      <td>{row.paymentMethod}</td>
-                      <td>{row.metalType}</td>
-                      <td className="numeric">{row.totalWeight.toFixed(3)} g</td>
-                      <td className="numeric">{formatMoney(row.gst)}</td>
-                      <td className="numeric net">{formatMoney(row.netAmount)}</td>
-                      <td>{row.salesperson}</td>
-                    </tr>
-                  ))}
                 </tbody>
               </table>
             </div>
 
-            <footer className="pagination-bar">
-              <div className="page-size-select">
-                <span>Rows per page</span>
-                <select
-                  value={size}
-                  onChange={(event) => {
-                    setSize(Number(event.target.value))
-                    setPage(0)
-                  }}
-                >
-                  {[10, 20, 50].map((option) => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                </select>
-              </div>
+            {/* Pagination Layer */}
+            {report.rows.length > 0 && (
+              <div className="pagination-modern">
+                <div className="page-size-wrap" style={{ color: '#A0ABC0', fontSize: '0.9rem' }}>
+                  Rows per page
+                  <select value={size} onChange={(e) => { setSize(Number(e.target.value)); setPage(0); }}>
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                  </select>
+                </div>
 
-              <div className="pagination-controls">
-                <button type="button" onClick={() => setPage((current) => Math.max(current - 1, 0))} disabled={page === 0}>Previous</button>
-                {pageButtons.map((pageNumber) => (
-                  <button
-                    key={pageNumber}
-                    type="button"
-                    className={pageNumber === page ? 'active' : ''}
-                    onClick={() => setPage(pageNumber)}
-                  >
-                    {pageNumber + 1}
+                <div className="pagination-controls-modern">
+                  <button className="page-btn" disabled={page === 0} onClick={() => setPage(p => Math.max(0, p - 1))}>
+                    &larr; Prev
                   </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => setPage((current) => Math.min(current + 1, Math.max(report.totalPages - 1, 0)))}
-                  disabled={page + 1 >= report.totalPages}
-                >
-                  Next
-                </button>
+                  {pageButtons.map((pageNum) => (
+                    <button
+                      key={pageNum}
+                      className={`page-btn ${pageNum === page ? 'active' : ''}`}
+                      onClick={() => setPage(pageNum)}
+                    >
+                      {pageNum + 1}
+                    </button>
+                  ))}
+                  <button className="page-btn" disabled={page + 1 >= report.totalPages} onClick={() => setPage(p => Math.min(report.totalPages - 1, p + 1))}>
+                    Next &rarr;
+                  </button>
+                </div>
               </div>
-            </footer>
-          </>
+            )}
+          </div>
         )}
-      </section>
-    </section>
+      </div>
+
+    </div>
   )
 }

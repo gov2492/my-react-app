@@ -5,6 +5,7 @@ import { createInventory, createInvoice, fetchDashboard, fetchInventory } from '
 import type { CreateInventoryPayload, CreateInvoicePayload, DashboardPayload, InventoryItem, InvoiceType } from './types/dashboard'
 import { MonolithicDashboard } from './components/MonolithicDashboard'
 import { InventoryEnhanced } from './components/InventoryEnhanced'
+import { GlobalConsole } from './components/GlobalConsole'
 import { AdminShops } from './components/AdminShops'
 import { ForgotPassword } from './components/ForgotPassword'
 import { SalesReportTab } from './components/SalesReportTab'
@@ -115,7 +116,30 @@ export default function App() {
 
   const [showForgotPassword, setShowForgotPassword] = useState(false)
 
-  const [activeTab, setActiveTab] = useState('Dashboard')
+  // Read initial tab from hash, default to Dashboard
+  const [activeTab, setActiveTab] = useState(() => {
+    const hash = window.location.hash.replace('#', '')
+    return hash || 'Dashboard'
+  })
+
+  // Update URL hash when tab changes
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId)
+    window.location.hash = tabId
+  }
+
+  // Listen to browser navigation (Back/Forward buttons)
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '')
+      if (hash) {
+        setActiveTab(hash)
+      }
+    }
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
+
   const [searchQuery, setSearchQuery] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showInventoryModal, setShowInventoryModal] = useState(false)
@@ -374,135 +398,135 @@ export default function App() {
             <div className="gradient-orb orb-3"></div>
           </div>
           <div className="login-shell">
-          <section className="login-showcase">
-            <div className="showcase-content">
-              <div className="showcase-badge">
-                <span className="badge-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#d4af37" stroke="#d4af37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                </span>
-                Luxury Jewellery ERP Suite
-              </div>
-              <h1>Complete ERP Solution<br />for Modern Jewellery Businesses</h1>
-              <p>
-                Streamline billing, inventory, customers, and live bullion rates in one intelligent platform built for jewellery retailers.
-              </p>
-
-              <div className="cta-container">
-                <button className="cta-primary">Start Free Trial</button>
-                <button className="cta-secondary">Book Demo</button>
-              </div>
-
-              <div className="showcase-stats">
-                <div className="stat-item">
-                  <div className="stat-icon" style={{ color: '#d4af37' }}>📈</div>
-                  <div className="showcase-stat-label">Live Gold & Silver Rates</div>
-                </div>
-                <div className="stat-item">
-                  <div className="stat-icon" style={{ color: '#d4af37' }}>🧾</div>
-                  <div className="showcase-stat-label">GST-Ready Smart Billing</div>
-                </div>
-                <div className="stat-item">
-                  <div className="stat-icon" style={{ color: '#d4af37' }}>📊</div>
-                  <div className="showcase-stat-label">Real-Time Business Insights</div>
-                </div>
-              </div>
-              <div className="feature-list">
-                <div className="feature-item">
-                  <span className="feature-check"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d4af37" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-                  <span>Smart Inventory Control</span>
-                </div>
-                <div className="feature-item">
-                  <span className="feature-check"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d4af37" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-                  <span>Multi-Metal Pricing Support</span>
-                </div>
-                <div className="feature-item">
-                  <span className="feature-check"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d4af37" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-                  <span>Advanced Reports & Profit Analytics</span>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {showForgotPassword ? (
-            <div style={{ alignSelf: 'center', width: '100%' }}>
-              <ForgotPassword onBack={() => setShowForgotPassword(false)} />
-            </div>
-          ) : (
-            <form className="login-card" onSubmit={onLogin}>
-              <div className="login-header">
-                <h2>Welcome Back</h2>
-                <p>Sign in to continue to your dashboard</p>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="username">Username</label>
-                <div className="input-wrapper">
-                  <span className="input-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+            <section className="login-showcase">
+              <div className="showcase-content">
+                <div className="showcase-badge">
+                  <span className="badge-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#d4af37" stroke="#d4af37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                   </span>
-                  <input
-                    id="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Enter your username"
-                    required
-                  />
+                  Luxury Jewellery ERP Suite
+                </div>
+                <h1>Complete ERP Solution<br />for Modern Jewellery Businesses</h1>
+                <p>
+                  Streamline billing, inventory, customers, and live bullion rates in one intelligent platform built for jewellery retailers.
+                </p>
+
+                <div className="cta-container">
+                  <button className="cta-primary">Start Free Trial</button>
+                  <button className="cta-secondary">Book Demo</button>
+                </div>
+
+                <div className="showcase-stats">
+                  <div className="stat-item">
+                    <div className="stat-icon" style={{ color: '#d4af37' }}>📈</div>
+                    <div className="showcase-stat-label">Live Gold & Silver Rates</div>
+                  </div>
+                  <div className="stat-item">
+                    <div className="stat-icon" style={{ color: '#d4af37' }}>🧾</div>
+                    <div className="showcase-stat-label">GST-Ready Smart Billing</div>
+                  </div>
+                  <div className="stat-item">
+                    <div className="stat-icon" style={{ color: '#d4af37' }}>📊</div>
+                    <div className="showcase-stat-label">Real-Time Business Insights</div>
+                  </div>
+                </div>
+                <div className="feature-list">
+                  <div className="feature-item">
+                    <span className="feature-check"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d4af37" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+                    <span>Smart Inventory Control</span>
+                  </div>
+                  <div className="feature-item">
+                    <span className="feature-check"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d4af37" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+                    <span>Multi-Metal Pricing Support</span>
+                  </div>
+                  <div className="feature-item">
+                    <span className="feature-check"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d4af37" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+                    <span>Advanced Reports & Profit Analytics</span>
+                  </div>
                 </div>
               </div>
+            </section>
 
-              <div className="form-group">
-                <label htmlFor="password">Password</label>
-                <div className="input-wrapper">
-                  <span className="input-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+            {showForgotPassword ? (
+              <div style={{ alignSelf: 'center', width: '100%' }}>
+                <ForgotPassword onBack={() => setShowForgotPassword(false)} />
+              </div>
+            ) : (
+              <form className="login-card" onSubmit={onLogin}>
+                <div className="login-header">
+                  <h2>Welcome Back</h2>
+                  <p>Sign in to continue to your dashboard</p>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="username">Username</label>
+                  <div className="input-wrapper">
+                    <span className="input-icon">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                    </span>
+                    <input
+                      id="username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      placeholder="Enter your username"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="password">Password</label>
+                  <div className="input-wrapper">
+                    <span className="input-icon">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                    </span>
+                    <input
+                      id="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter your password"
+                      type="password"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {authError && (
+                  <div className="error-message">
+                    <span className="error-icon">⚠️</span>
+                    {authError}
+                  </div>
+                )}
+
+                <button className="login-button" type="submit" disabled={loggingIn}>
+                  <span className="button-content">
+                    {loggingIn ? (
+                      <>
+                        <span className="spinner"></span>
+                        Signing in...
+                      </>
+                    ) : (
+                      <>
+                        Sign In
+                        <span className="button-arrow">→</span>
+                      </>
+                    )}
                   </span>
-                  <input
-                    id="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    type="password"
-                    required
-                  />
-                </div>
-              </div>
-
-              {authError && (
-                <div className="error-message">
-                  <span className="error-icon">⚠️</span>
-                  {authError}
-                </div>
-              )}
-
-              <button className="login-button" type="submit" disabled={loggingIn}>
-                <span className="button-content">
-                  {loggingIn ? (
-                    <>
-                      <span className="spinner"></span>
-                      Signing in...
-                    </>
-                  ) : (
-                    <>
-                      Sign In
-                      <span className="button-arrow">→</span>
-                    </>
-                  )}
-                </span>
-              </button>
-
-
-
-              <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-                <button
-                  type="button"
-                  onClick={() => setShowForgotPassword(true)}
-                  style={{ background: 'none', border: 'none', color: '#d4af37', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.9rem' }}
-                >
-                  Forgot Password?
                 </button>
-              </div>
-            </form>
-          )}
+
+
+
+                <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    style={{ background: 'none', border: 'none', color: '#d4af37', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.9rem' }}
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
         <ToastViewport />
@@ -563,7 +587,7 @@ export default function App() {
               <button
                 key={tab.id}
                 className={`nav-item ${activeTab === tab.id ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => handleTabChange(tab.id)}
               >
                 {tab.icon}
                 {tab.id}
@@ -572,7 +596,7 @@ export default function App() {
           </nav>
 
           <div className="system-title">SYSTEM</div>
-          <button className="nav-item" onClick={() => setActiveTab('Settings' as any)}>
+          <button className="nav-item" onClick={() => handleTabChange('Settings')}>
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
             Settings
           </button>
@@ -668,11 +692,14 @@ export default function App() {
                       />
                     </div>
                     <div className="form-field">
-                      <label>Mobile Number</label>
+                      <label>Mobile Number <span style={{ color: '#ef4444' }}>*</span></label>
                       <input
-                        placeholder="e.g. +91 9876543210"
+                        placeholder="e.g. 9876543210"
                         value={invoiceForm.mobilenumber || ''}
-                        onChange={(e) => setInvoiceForm((prev) => ({ ...prev, mobilenumber: e.target.value }))}
+                        onChange={(e) => setInvoiceForm((prev) => ({ ...prev, mobilenumber: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
+                        required
+                        pattern="^\d{10}$"
+                        title="Enter exactly 10 digits"
                       />
                     </div>
                   </div>
@@ -1124,6 +1151,7 @@ export default function App() {
         </div>
       )}
 
+      <GlobalConsole />
       <ToastViewport />
     </>
   )
