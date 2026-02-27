@@ -1,23 +1,37 @@
-/* ===== JEWELLERY SHOP DASHBOARD - BEAUTIFUL & SIMPLE ===== */
+/* ===== JEWELLERY SHOP DASHBOARD - DARK GLASSMORPHISM (matching Inventory) ===== */
 
 .jewellery-dashboard {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-  padding: 2rem;
-  background: linear-gradient(135deg, #fcfffd 0%, #f0f9ff 100%);
-  min-height: 100vh;
+  gap: 1.5rem;
+  padding: 1.5rem 2rem;
+  background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+  min-height: 100%;
+  border-radius: 12px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
 }
 
-/* ===== HEADER STYLES ===== */
+/* ===== HEADER ===== */
 
 .dashboard-header {
-  background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 2rem;
-  border-radius: 1rem;
+  border-radius: 16px;
   color: white;
-  box-shadow: 0 10px 30px rgba(30, 64, 175, 0.15);
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
 }
 
 .header-top {
@@ -27,39 +41,43 @@
   margin-bottom: 2rem;
   gap: 2rem;
   flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
 }
 
 .header-title h1 {
   margin: 0;
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 800;
-  letter-spacing: -0.5px;
+  letter-spacing: 1px;
 }
 
 .header-title p {
-  margin: 0.5rem 0 0 0;
-  font-size: 1rem;
-  opacity: 0.9;
+  margin: 0.25rem 0 0 0;
+  font-size: 0.95rem;
+  opacity: 0.95;
   font-weight: 500;
 }
 
 .btn-create-invoice {
-  background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);
-  color: white;
-  border: none;
   padding: 1rem 2rem;
-  border-radius: 0.75rem;
-  font-size: 1rem;
+  background: white;
+  color: #667eea;
+  border: none;
+  border-radius: 10px;
   font-weight: 700;
   cursor: pointer;
+  font-size: 1rem;
   transition: all 0.3s ease;
-  box-shadow: 0 8px 20px rgba(244, 63, 94, 0.25);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   white-space: nowrap;
+  position: relative;
+  z-index: 1;
 }
 
 .btn-create-invoice:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(244, 63, 94, 0.35);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
 .btn-create-invoice:active {
@@ -70,18 +88,20 @@
 
 .nav-tabs {
   display: flex;
-  gap: 1rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
 }
 
 .nav-tab {
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(10px);
-  border: 2px solid transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: white;
   padding: 0.75rem 1.5rem;
-  border-radius: 0.75rem;
-  font-size: 1rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -89,14 +109,14 @@
 
 .nav-tab:hover {
   background: rgba(255, 255, 255, 0.25);
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .nav-tab.active {
   background: white;
-  color: #1e40af;
+  color: #667eea;
   border-color: white;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 /* ===== VIEW CONTENT ===== */
@@ -121,27 +141,30 @@
 
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
 }
 
 .kpi-card {
-  background: white;
-  border-radius: 1rem;
-  padding: 1.75rem;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(30, 64, 175, 0.1);
-  transition: all 0.3s ease;
   display: flex;
-  gap: 1.5rem;
-  align-items: flex-start;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  color: white;
+  overflow: hidden;
 }
 
 .kpi-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 32px rgba(30, 64, 175, 0.12);
-  border-color: rgba(30, 64, 175, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
 }
 
 .kpi-icon {
@@ -151,37 +174,43 @@
 
 .kpi-content {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .kpi-label {
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin: 0 0 0.5rem 0;
+  letter-spacing: 0.05em;
+  opacity: 0.8;
+  margin: 0 0 0.25rem 0;
 }
 
 .kpi-value {
-  font-size: 1.75rem;
-  font-weight: 900;
-  color: #1e3a8a;
-  margin: 0 0 0.5rem 0;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #fbbf24;
+  margin: 0 0 0.25rem 0;
   line-height: 1.2;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .kpi-meta {
-  font-size: 0.85rem;
-  color: #94a3b8;
+  font-size: 0.8rem;
+  opacity: 0.7;
   font-weight: 500;
 }
 
 /* ===== METALS SECTION ===== */
 
 .metals-section h2 {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-weight: 800;
-  color: #1e3a8a;
+  color: white;
   margin: 0 0 1.5rem 0;
 }
 
@@ -189,62 +218,72 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1.5rem;
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
 }
 
 .metal-card {
-  background: linear-gradient(135deg, #dbeafe 0%, #f0f9ff 100%);
-  border: 2px solid #0ea5e9;
-  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
   padding: 1.5rem;
   text-align: center;
   transition: all 0.3s ease;
   cursor: pointer;
+  backdrop-filter: blur(10px);
+  color: white;
+  overflow: hidden;
 }
 
 .metal-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(6, 182, 212, 0.15);
-  border-color: #0284c7;
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .metal-card h4 {
   margin: 0 0 0.75rem 0;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 800;
-  color: #1e40af;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .metal-card .price {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-weight: 900;
-  color: #0ea5e9;
+  color: #fbbf24;
   margin: 0 0 0.5rem 0;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .metal-card .change {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 700;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
   display: inline-block;
-  background: rgba(6, 182, 212, 0.1);
 }
 
 .metal-card .change.positive {
-  color: #059669;
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
 }
 
 .metal-card .change.negative {
-  color: #dc2626;
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
 }
 
 /* ===== RECENT SECTION ===== */
 
 .recent-section h2 {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-weight: 800;
-  color: #1e3a8a;
+  color: white;
   margin: 0 0 1.5rem 0;
 }
 
@@ -255,20 +294,22 @@
 }
 
 .invoice-row {
-  background: white;
-  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
   padding: 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(30, 64, 175, 0.08);
+  backdrop-filter: blur(10px);
   transition: all 0.3s ease;
+  color: white;
 }
 
 .invoice-row:hover {
   transform: translateX(4px);
-  box-shadow: 0 8px 16px rgba(30, 64, 175, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
 }
 
 .invoice-info {
@@ -284,14 +325,14 @@
 
 .invoice-header strong {
   font-weight: 700;
-  color: #1e3a8a;
+  color: white;
   font-size: 1.05rem;
 }
 
 .badge {
   display: inline-block;
   padding: 0.375rem 0.75rem;
-  border-radius: 0.5rem;
+  border-radius: 6px;
   font-size: 0.8rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -299,31 +340,31 @@
 }
 
 .badge.status-paid {
-  background: #dcfce7;
-  color: #166534;
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
 }
 
 .badge.status-pending {
-  background: #fef3c7;
-  color: #92400e;
+  background: rgba(251, 191, 36, 0.2);
+  color: #fcd34d;
 }
 
 .badge.status-draft {
-  background: #e5e7eb;
-  color: #374151;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .invoice-details {
   display: flex;
   gap: 1rem;
   font-size: 0.85rem;
-  color: #64748b;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .invoice-amount {
   font-weight: 900;
   font-size: 1.25rem;
-  color: #1e40af;
+  color: #6ee7b7;
 }
 
 /* ===== INVOICES VIEW ===== */
@@ -337,10 +378,12 @@
 }
 
 .search-input,
-.filter-select {
+.jewellery-dashboard .filter-select {
   padding: 0.75rem 1rem;
-  border: 2px solid #e2e8f0;
-  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 8px;
   font-size: 1rem;
   transition: all 0.3s ease;
   font-family: inherit;
@@ -351,75 +394,85 @@
   min-width: 250px;
 }
 
+.search-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
 .search-input:focus,
-.filter-select:focus {
+.jewellery-dashboard .filter-select:focus {
   outline: none;
-  border-color: #1e40af;
-  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.jewellery-dashboard .filter-select option {
+  background: #302b63;
+  color: white;
 }
 
 .invoices-table {
-  background: white;
-  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e2e8f0;
+  backdrop-filter: blur(10px);
 }
 
 .table-wrapper {
   overflow-x: auto;
 }
 
-table {
+.jewellery-dashboard table {
   width: 100%;
   border-collapse: collapse;
+  color: white;
 }
 
-table thead {
-  background: #f8fafc;
-  border-bottom: 2px solid #e2e8f0;
+.jewellery-dashboard table thead {
+  background: linear-gradient(90deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
 }
 
-table th {
+.jewellery-dashboard table th {
   padding: 1.25rem 1.5rem;
   text-align: left;
-  font-size: 0.875rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #475569;
-}
-
-table td {
-  padding: 1.25rem 1.5rem;
-  font-size: 0.95rem;
-  color: #334155;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-table tbody tr {
-  transition: background 0.2s ease;
-}
-
-table tbody tr:hover {
-  background: #f8fafc;
-}
-
-code {
-  font-family: 'Courier New', monospace;
-  background: #f1f5f9;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.375rem;
+  font-size: 0.85rem;
   font-weight: 700;
-  color: #1e40af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #fbbf24;
+}
+
+.jewellery-dashboard table td {
+  padding: 1rem 1.5rem;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.jewellery-dashboard table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.jewellery-dashboard table tbody tr:hover {
+  background: rgba(102, 126, 234, 0.15);
+}
+
+.jewellery-dashboard code {
+  font-family: 'Courier New', monospace;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 700;
+  color: #c4b5fd;
   font-size: 0.9rem;
 }
 
 .metal-badge {
   background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-  color: white;
+  color: #1a1a2e;
   padding: 0.375rem 0.75rem;
-  border-radius: 0.5rem;
+  border-radius: 6px;
   font-size: 0.85rem;
   font-weight: 700;
   display: inline-block;
@@ -427,15 +480,15 @@ code {
 
 .amount-cell {
   font-weight: 900;
-  color: #059669;
+  color: #6ee7b7;
 }
 
 .btn-view {
-  background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
   padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
+  border-radius: 6px;
   font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
@@ -444,16 +497,16 @@ code {
 
 .btn-view:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
-.empty-state {
+.jewellery-dashboard .empty-state {
   padding: 3rem 2rem;
   text-align: center;
-  color: #94a3b8;
+  color: rgba(255, 255, 255, 0.6);
 }
 
-.empty-state p {
+.jewellery-dashboard .empty-state p {
   font-size: 1.1rem;
   margin: 0;
 }
@@ -467,37 +520,37 @@ code {
 .all-invoices-header {
   margin-bottom: 2rem;
   padding-bottom: 1.5rem;
-  border-bottom: 2px solid #e2e8f0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .all-invoices-header h2 {
   margin: 0 0 0.5rem 0;
   font-size: 2rem;
-  color: #1e3a8a;
+  color: white;
   font-weight: 800;
 }
 
-.invoice-count {
+.jewellery-dashboard .invoice-count {
   margin: 0;
-  color: #64748b;
+  color: rgba(255, 255, 255, 0.6);
   font-size: 1rem;
   font-weight: 500;
 }
 
 .all-invoices-table {
-  background: white;
-  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e2e8f0;
+  backdrop-filter: blur(10px);
 }
 
 .btn-download {
-  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
   padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 1rem;
   transition: all 0.2s ease;
@@ -508,39 +561,40 @@ code {
 
 .btn-download:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
-/* ===== INVOICE DETAILS VIEW ===== */
+/* ===== INVOICE DETAIL VIEW ===== */
 
 .invoice-details-view {
   animation: fadeIn 0.3s ease-out;
 }
 
 .btn-back {
-  background: white;
-  border: 2px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   padding: 0.75rem 1.5rem;
-  border-radius: 0.75rem;
+  border-radius: 8px;
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
   margin-bottom: 1.5rem;
-  color: #1e40af;
+  color: white;
   transition: all 0.3s ease;
 }
 
 .btn-back:hover {
-  background: #f8fafc;
-  border-color: #1e40af;
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .invoice-detail-card {
-  background: white;
-  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
   padding: 2rem;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e2e8f0;
+  backdrop-filter: blur(10px);
+  color: white;
 }
 
 .invoice-header-detail {
@@ -549,14 +603,14 @@ code {
   align-items: center;
   margin-bottom: 2rem;
   padding-bottom: 1.5rem;
-  border-bottom: 2px solid #e2e8f0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .invoice-header-detail h2 {
   margin: 0;
   font-size: 1.75rem;
   font-weight: 800;
-  color: #1e3a8a;
+  color: white;
 }
 
 .detail-grid {
@@ -568,24 +622,24 @@ code {
 
 .detail-item label {
   display: block;
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.05em;
   margin-bottom: 0.5rem;
 }
 
 .detail-item p {
   font-size: 1rem;
   font-weight: 700;
-  color: #1e3a8a;
+  color: white;
   margin: 0;
 }
 
 .detail-item p.amount {
   font-size: 1.5rem;
-  color: #059669;
+  color: #6ee7b7;
 }
 
 .action-buttons {
@@ -594,11 +648,11 @@ code {
 }
 
 .btn-secondary {
-  background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
   padding: 0.875rem 1.75rem;
-  border-radius: 0.75rem;
+  border-radius: 8px;
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
@@ -607,7 +661,7 @@ code {
 
 .btn-secondary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(244, 63, 94, 0.25);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
 }
 
 /* ===== CUSTOMERS VIEW COMPACT ===== */
@@ -621,20 +675,21 @@ code {
 }
 
 .customer-compact-card {
-  background: white;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 12px;
   padding: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-  border: 1px solid #e2e8f0;
+  backdrop-filter: blur(10px);
   transition: all 0.2s ease;
   display: flex;
   gap: 24px;
   align-items: center;
+  color: white;
 }
 
 .customer-compact-card:hover {
-  box-shadow: 0 8px 24px rgba(30, 64, 175, 0.08);
-  border-color: rgba(30, 64, 175, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
 }
 
 .customer-compact-header {
@@ -642,7 +697,7 @@ code {
   align-items: center;
   gap: 16px;
   min-width: 320px;
-  border-right: 1px solid #e2e8f0;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
   padding-right: 24px;
 }
 
@@ -650,7 +705,7 @@ code {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   display: flex;
   align-items: center;
@@ -664,7 +719,7 @@ code {
   margin: 0 0 6px 0;
   font-size: 1.1rem;
   font-weight: 800;
-  color: #1e3a8a;
+  color: white;
   white-space: nowrap;
 }
 
@@ -676,14 +731,14 @@ code {
 .compact-stat-pill {
   font-size: 0.75rem;
   padding: 4px 8px;
-  background: #f1f5f9;
-  color: #475569;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
   border-radius: 6px;
 }
 
 .compact-stat-pill.amount {
-  background: #ecfdf5;
-  color: #059669;
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
 }
 
 .compact-stat-pill strong {
@@ -705,8 +760,8 @@ code {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #f8fafc;
-  border: 1px solid #f1f5f9;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   padding: 8px 12px;
 }
@@ -719,13 +774,13 @@ code {
 
 .compact-id {
   font-weight: 800;
-  color: #1e3a8a;
+  color: #c4b5fd;
   font-size: 0.8rem;
 }
 
 .compact-date {
   font-size: 0.75rem;
-  color: #64748b;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .compact-purchase-mid {
@@ -738,7 +793,7 @@ code {
 
 .compact-desc {
   font-size: 0.8rem;
-  color: #475569;
+  color: rgba(255, 255, 255, 0.7);
   font-weight: 500;
 }
 
@@ -751,7 +806,7 @@ code {
 
 .compact-amount {
   font-weight: 800;
-  color: #059669;
+  color: #6ee7b7;
   font-size: 0.85rem;
 }
 
@@ -796,7 +851,7 @@ code {
   }
 
   .header-title h1 {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
   }
 
   .header-title p {
@@ -821,12 +876,12 @@ code {
   }
 
   .search-input,
-  .filter-select {
+  .jewellery-dashboard .filter-select {
     width: 100%;
   }
 
-  table th,
-  table td {
+  .jewellery-dashboard table th,
+  .jewellery-dashboard table td {
     padding: 0.75rem;
     font-size: 0.8rem;
   }
@@ -858,7 +913,262 @@ code {
   }
 }
 
-/* ===== PREMIUM INVOICE TEMPLATE STYLES ===== */
+/* ===== LIGHT THEME OVERRIDES ===== */
+[data-theme="light"] .jewellery-dashboard {
+  background: var(--page-gradient);
+}
+
+[data-theme="light"] .dashboard-header {
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.15);
+}
+
+[data-theme="light"] .kpi-card {
+  background: var(--bg-card);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-card);
+}
+
+[data-theme="light"] .kpi-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-medium);
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.12);
+}
+
+[data-theme="light"] .kpi-label {
+  color: var(--text-secondary);
+}
+
+[data-theme="light"] .kpi-value {
+  color: var(--accent-purple);
+}
+
+[data-theme="light"] .kpi-meta {
+  color: var(--text-muted);
+}
+
+[data-theme="light"] .metal-card {
+  background: var(--bg-card);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-card);
+}
+
+[data-theme="light"] .metal-card:hover {
+  border-color: var(--border-medium);
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.12);
+  background: var(--bg-card-hover);
+}
+
+[data-theme="light"] .metal-card h4 {
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .metal-card .price {
+  color: var(--accent-purple);
+}
+
+[data-theme="light"] .metals-section h2,
+[data-theme="light"] .invoices-view h2 {
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .invoice-row {
+  background: var(--bg-card);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .invoice-row:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-medium);
+}
+
+[data-theme="light"] .invoice-customer {
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .invoice-id {
+  color: var(--text-muted);
+}
+
+[data-theme="light"] .invoice-amount {
+  color: var(--accent-green);
+}
+
+[data-theme="light"] .filters {
+  background: var(--bg-card);
+  border-color: var(--border-subtle);
+}
+
+[data-theme="light"] .search-input {
+  background: var(--search-bg);
+  border-color: var(--search-border);
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .search-input::placeholder {
+  color: var(--text-muted);
+}
+
+[data-theme="light"] .jewellery-dashboard .filter-select {
+  background: var(--bg-card);
+  border-color: var(--search-border);
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .invoices-table,
+[data-theme="light"] .all-invoices-table {
+  background: var(--bg-card);
+  border-color: var(--border-subtle);
+  backdrop-filter: none;
+  box-shadow: var(--shadow-card);
+}
+
+[data-theme="light"] .jewellery-dashboard table {
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .jewellery-dashboard table thead {
+  background: var(--table-header-bg);
+  border-bottom-color: var(--border-subtle);
+}
+
+[data-theme="light"] .jewellery-dashboard code {
+  background: rgba(99, 102, 241, 0.08);
+  color: var(--accent-purple);
+}
+
+[data-theme="light"] .jewellery-dashboard .filter-select option {
+  background: #ffffff;
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .jewellery-dashboard table th {
+  background: var(--table-header-bg);
+  color: var(--accent-purple);
+  border-bottom-color: var(--border-subtle);
+}
+
+[data-theme="light"] .jewellery-dashboard table td {
+  color: var(--text-primary);
+  border-bottom-color: var(--border-subtle);
+}
+
+[data-theme="light"] .jewellery-dashboard table tr:hover td {
+  background: rgba(99, 102, 241, 0.04);
+}
+
+[data-theme="light"] .nav-tab {
+  color: var(--text-muted);
+}
+
+[data-theme="light"] .nav-tab.active {
+  color: var(--accent-purple);
+  border-bottom-color: var(--accent-purple);
+}
+
+[data-theme="light"] .empty-state {
+  color: var(--text-muted);
+}
+
+[data-theme="light"] .page-btn {
+  background: var(--bg-card);
+  border-color: var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+[data-theme="light"] .page-btn.active {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: var(--accent-purple);
+  color: var(--accent-purple);
+}
+
+[data-theme="light"] .recent-section h2 {
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .invoice-row {
+  background: var(--bg-card);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+  backdrop-filter: none;
+  box-shadow: var(--shadow-card);
+}
+
+[data-theme="light"] .invoice-row:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-medium);
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.12);
+}
+
+[data-theme="light"] .invoice-header strong {
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .invoice-details {
+  color: var(--text-muted);
+}
+
+[data-theme="light"] .invoice-amount {
+  color: var(--accent-green);
+}
+
+[data-theme="light"] .badge.status-paid {
+  background: var(--accent-green-bg);
+  color: var(--accent-green);
+}
+
+[data-theme="light"] .badge.status-pending {
+  background: rgba(217, 119, 6, 0.1);
+  color: #d97706;
+}
+
+[data-theme="light"] .badge.status-draft {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--text-muted);
+}
+
+[data-theme="light"] .invoices-view .table-wrapper table th {
+  background: var(--table-header-bg);
+  color: var(--accent-purple);
+}
+
+[data-theme="light"] .invoices-view .table-wrapper table td {
+  color: var(--text-primary);
+  border-bottom-color: var(--border-subtle);
+}
+
+[data-theme="light"] .invoices-view .table-wrapper table tr:hover td {
+  background: rgba(99, 102, 241, 0.04);
+}
+
+[data-theme="light"] .invoice-detail-card {
+  background: var(--bg-card);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .invoice-detail-card h2,
+[data-theme="light"] .invoice-detail-card label {
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .invoice-detail-card p {
+  color: var(--text-secondary);
+}
+
+[data-theme="light"] .btn-back {
+  color: var(--accent-purple);
+}
+
+[data-theme="light"] .btn-secondary {
+  background: var(--bg-card);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+}
+
+/* ===== PREMIUM INVOICE TEMPLATE STYLES (print — kept light) ===== */
 
 .invoice-template-overlay {
   position: fixed;

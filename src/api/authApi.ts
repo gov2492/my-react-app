@@ -26,7 +26,7 @@ export interface UserDetails {
   enabled: boolean
 }
 
-const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL || 'http://127.0.0.1:8083'
+const AUTH_API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8080'
 
 /**
  * call localhost:8083

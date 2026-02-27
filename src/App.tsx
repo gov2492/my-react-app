@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
+import { useTheme } from './context/ThemeContext'
 import { login } from './api/authApi'
 import { createInventory, createInvoice, fetchDashboard, fetchInventory } from './api/dashboardApi'
 import type { CreateInventoryPayload, CreateInvoicePayload, DashboardPayload, InventoryItem, InvoiceType } from './types/dashboard'
@@ -9,6 +10,7 @@ import { GlobalConsole } from './components/GlobalConsole'
 import { AdminShops } from './components/AdminShops'
 import { ForgotPassword } from './components/ForgotPassword'
 import { SalesReportTab } from './components/SalesReportTab'
+import { SettingsPage } from './components/SettingsPage'
 import { NotificationCenter } from './components/NotificationCenter'
 import { ToastViewport } from './components/ToastViewport'
 import { useNotifications } from './context/NotificationContext'
@@ -100,6 +102,7 @@ function formatDateTime(value: string): string {
 
 export default function App() {
   const { setAuthToken, pushToast } = useNotifications()
+  const { theme, toggleTheme } = useTheme()
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('luxegem_token'))
   const [loggedInUsername, setLoggedInUsername] = useState<string>(() => localStorage.getItem('luxegem_username') || 'admin')
   const [jewellerName, setJewellerName] = useState<string>(() => localStorage.getItem('luxegem_jeweller_name') || 'Jewellery Dashboard')
@@ -623,12 +626,48 @@ export default function App() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
             <div className="topbar-right">
+              <button className="theme-toggle" onClick={toggleTheme} title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
+                {theme === 'dark' ? '☀️' : '🌙'}
+              </button>
               <button className="date-pill">{dateLabel}</button>
               <NotificationCenter />
             </div>
           </header>
 
-          {activeTab === 'Shops' ? (
+          {activeTab === 'Settings' ? (
+            <SettingsPage
+              token={token}
+              username={loggedInUsername}
+              jewellerName={jewellerName}
+              shopEmail={shopEmail}
+              shopContact={shopContact}
+              shopAddress={shopAddress}
+              shopGst={shopGst}
+              shopLogo={shopLogo}
+              onProfileUpdate={(data) => {
+                if (data.jewellerName !== undefined) {
+                  setJewellerName(data.jewellerName)
+                  localStorage.setItem('luxegem_jeweller_name', data.jewellerName)
+                }
+                if (data.shopEmail !== undefined) {
+                  setShopEmail(data.shopEmail)
+                  localStorage.setItem('luxegem_email', data.shopEmail)
+                }
+                if (data.shopContact !== undefined) {
+                  setShopContact(data.shopContact)
+                  localStorage.setItem('luxegem_shop_contact', data.shopContact)
+                }
+                if (data.shopAddress !== undefined) {
+                  setShopAddress(data.shopAddress)
+                  localStorage.setItem('luxegem_shop_address', data.shopAddress)
+                }
+                if (data.shopGst !== undefined) {
+                  setShopGst(data.shopGst)
+                  localStorage.setItem('luxegem_shop_gst', data.shopGst)
+                }
+              }}
+            />
+          ) : activeTab === 'Shops' ? (
             <AdminShops token={token} />
           ) : activeTab === 'Reports' ? (
             <SalesReportTab token={token} formatMoney={formatMoney} globalSearch={searchQuery} />

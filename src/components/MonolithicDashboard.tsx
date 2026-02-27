@@ -60,6 +60,7 @@ export function MonolithicDashboard({
   const [statusFilter, setStatusFilter] = useState<'All' | 'Paid' | 'Pending' | 'Draft'>('All')
   const [viewingInvoiceTemplate, setViewingInvoiceTemplate] = useState<Invoice | null>(null)
   const [allInvoicesPage, setAllInvoicesPage] = useState(1)
+  const [invoicesPage, setInvoicesPage] = useState(1)
   const PAGE_SIZE = 10
 
   useEffect(() => {
@@ -115,6 +116,14 @@ export function MonolithicDashboard({
     return data.invoices.slice(start, start + PAGE_SIZE)
   }, [data.invoices, allInvoicesPage])
   const totalAllInvoicesPages = Math.ceil(data.invoices.length / PAGE_SIZE)
+
+  // Paginated filtered invoices (Billing tab)
+  const totalFilteredPages = Math.max(1, Math.ceil(filteredInvoices.length / PAGE_SIZE))
+  const safeInvoicesPage = Math.min(invoicesPage, totalFilteredPages)
+  const paginatedFilteredInvoices = useMemo(() => {
+    const start = (safeInvoicesPage - 1) * PAGE_SIZE
+    return filteredInvoices.slice(start, start + PAGE_SIZE)
+  }, [filteredInvoices, safeInvoicesPage])
 
   return (
     <div className="jewellery-dashboard">
@@ -206,7 +215,7 @@ export function MonolithicDashboard({
               {data.marketRates.map((rate) => (
                 <div key={rate.metal} className="metal-card">
                   <h4>{rate.metal}</h4>
-                  <p className="price">{formatMoney(rate.pricePerGram, rate.currency as any)}/gram</p>
+                  <p className="price">{formatMoney(rate.pricePerGram, rate.currency as any)}/g</p>
                   <p className={`change ${rate.changePercent >= 0 ? 'positive' : 'negative'}`}>
                     {rate.changePercent >= 0 ? '↑' : '↓'} {Math.abs(rate.changePercent)}%
                   </p>
@@ -334,51 +343,90 @@ export function MonolithicDashboard({
           ) : (
             <div className="invoices-table">
               {filteredInvoices.length > 0 ? (
-                <div className="table-wrapper">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Invoice ID</th>
-                        <th>Customer</th>
-                        <th>Metal Type</th>
-                        <th>Amount</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredInvoices.map((invoice) => (
-                        <tr key={invoice.invoiceId}>
-                          <td>
-                            <code>{invoice.invoiceId}</code>
-                          </td>
-                          <td>{invoice.customer}</td>
-                          <td>
-                            <span className="metal-badge">
-                              {formatInvoiceType(invoice.type)}
-                            </span>
-                          </td>
-                          <td className="amount-cell">
-                            {formatMoney(invoice.amount)}
-                          </td>
-                          <td>
-                            <span className={`badge status-${invoice.status.toLowerCase()}`}>
-                              {invoice.status}
-                            </span>
-                          </td>
-                          <td>
-                            <button
-                              className="btn-view"
-                              onClick={() => setSelectedInvoice(invoice)}
-                            >
-                              View
-                            </button>
-                          </td>
+                <>
+                  <div className="table-wrapper">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Invoice ID</th>
+                          <th>Customer</th>
+                          <th>Metal Type</th>
+                          <th>Amount</th>
+                          <th>Status</th>
+                          <th>Action</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {paginatedFilteredInvoices.map((invoice) => (
+                          <tr key={invoice.invoiceId}>
+                            <td>
+                              <code>{invoice.invoiceId}</code>
+                            </td>
+                            <td>{invoice.customer}</td>
+                            <td>
+                              <span className="metal-badge">
+                                {formatInvoiceType(invoice.type)}
+                              </span>
+                            </td>
+                            <td className="amount-cell">
+                              {formatMoney(invoice.amount)}
+                            </td>
+                            <td>
+                              <span className={`badge status-${invoice.status.toLowerCase()}`}>
+                                {invoice.status}
+                              </span>
+                            </td>
+                            <td>
+                              <button
+                                className="btn-view"
+                                onClick={() => setSelectedInvoice(invoice)}
+                              >
+                                View
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {totalFilteredPages > 1 && (
+                    <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderTop: '1px solid var(--border-subtle)' }}>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                        Showing {(safeInvoicesPage - 1) * PAGE_SIZE + 1}–{Math.min(safeInvoicesPage * PAGE_SIZE, filteredInvoices.length)} of {filteredInvoices.length}
+                      </span>
+                      <div style={{ display: 'flex', gap: '0.35rem' }}>
+                        <button
+                          className="page-btn"
+                          disabled={safeInvoicesPage <= 1}
+                          onClick={() => setInvoicesPage(p => p - 1)}
+                        >
+                          ‹ Prev
+                        </button>
+                        {Array.from({ length: totalFilteredPages }, (_, i) => i + 1)
+                          .filter(p => p === 1 || p === totalFilteredPages || Math.abs(p - safeInvoicesPage) <= 2)
+                          .map((p, idx, arr) => (
+                            <span key={p}>
+                              {idx > 0 && arr[idx - 1] !== p - 1 && <span style={{ padding: '0 0.25rem', color: 'var(--text-muted)' }}>…</span>}
+                              <button
+                                className={`page-btn ${p === safeInvoicesPage ? 'active' : ''}`}
+                                onClick={() => setInvoicesPage(p)}
+                              >
+                                {p}
+                              </button>
+                            </span>
+                          ))}
+                        <button
+                          className="page-btn"
+                          disabled={safeInvoicesPage >= totalFilteredPages}
+                          onClick={() => setInvoicesPage(p => p + 1)}
+                        >
+                          Next ›
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="empty-state">
                   <p>No invoices found</p>
@@ -460,26 +508,26 @@ export function MonolithicDashboard({
                 </div>
 
                 {totalAllInvoicesPages > 1 && (
-                  <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem' }}>
-                    <button
-                      disabled={allInvoicesPage === 1}
-                      onClick={() => setAllInvoicesPage(p => p - 1)}
-                      className="btn-page"
-                      style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid #e2e8f0', background: allInvoicesPage === 1 ? '#f8fafc' : 'white', cursor: allInvoicesPage === 1 ? 'not-allowed' : 'pointer' }}
-                    >
-                      Previous
-                    </button>
-                    <span style={{ fontSize: '0.9rem', color: '#64748b' }}>
+                  <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderTop: '1px solid var(--border-subtle)' }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                       Page {allInvoicesPage} of {totalAllInvoicesPages}
                     </span>
-                    <button
-                      disabled={allInvoicesPage === totalAllInvoicesPages}
-                      onClick={() => setAllInvoicesPage(p => p + 1)}
-                      className="btn-page"
-                      style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid #e2e8f0', background: allInvoicesPage === totalAllInvoicesPages ? '#f8fafc' : 'white', cursor: allInvoicesPage === totalAllInvoicesPages ? 'not-allowed' : 'pointer' }}
-                    >
-                      Next
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.35rem' }}>
+                      <button
+                        className="page-btn"
+                        disabled={allInvoicesPage === 1}
+                        onClick={() => setAllInvoicesPage(p => p - 1)}
+                      >
+                        ‹ Prev
+                      </button>
+                      <button
+                        className="page-btn"
+                        disabled={allInvoicesPage === totalAllInvoicesPages}
+                        onClick={() => setAllInvoicesPage(p => p + 1)}
+                      >
+                        Next ›
+                      </button>
+                    </div>
                   </div>
                 )}
               </>

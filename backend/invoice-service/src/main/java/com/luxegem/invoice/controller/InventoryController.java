@@ -23,7 +23,6 @@ import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/inventory")
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class InventoryController {
 
     private final InventoryRepository inventoryRepository;
@@ -58,11 +57,11 @@ public class InventoryController {
                 request.category(),
                 request.metalType(),
                 request.purity(),
-                BigDecimal.valueOf(request.grossWeight()),
+                request.grossWeight() != null ? BigDecimal.valueOf(request.grossWeight()) : BigDecimal.ZERO,
                 request.netWeight() != null ? BigDecimal.valueOf(request.netWeight()) : null,
                 request.makingCharge() != null ? BigDecimal.valueOf(request.makingCharge()) : null,
-                BigDecimal.valueOf(request.ratePerGram()),
-                request.stockQuantity(),
+                request.ratePerGram() != null ? BigDecimal.valueOf(request.ratePerGram()) : BigDecimal.ZERO,
+                request.stockQuantity() != null ? request.stockQuantity() : 0,
                 request.hsnCode(),
                 request.description());
         entity.setShopId(shopId);

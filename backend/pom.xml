@@ -10,9 +10,7 @@
     <name>backend</name>
 
     <modules>
-        <module>auth-service</module>
         <module>invoice-service</module>
-        <module>market-service</module>
-        <module>dashboard-service</module>
+        <module>demo</module>
     </modules>
 </project>
